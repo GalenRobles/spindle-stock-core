@@ -1,19 +1,24 @@
-using Microsoft.AspNetCore.Mvc;
+using AlmacenTaller.Data;
+using AlmacenTaller.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace AlmacenTaller.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly ILogger<IndexModel> _logger;
+    private readonly AppDbContext _context;
 
-    public IndexModel(ILogger<IndexModel> logger)
+    public IndexModel(AppDbContext context)
     {
-        _logger = logger;
+        _context = context;
     }
 
-    public void OnGet()
-    {
+    public IList<Pieza> Piezas { get; set; } = default!;
 
+    public async Task OnGetAsync()
+    {
+        // Traemos todas las piezas desde PostgreSQL ordenadas por ID
+        Piezas = await _context.Piezas.OrderBy(p => p.Id).ToListAsync();
     }
 }
