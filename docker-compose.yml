@@ -20,4 +20,4 @@ services:
       - "6379:6379"
 
 volumes:
-  pgdata:ls
+  pgdata:
