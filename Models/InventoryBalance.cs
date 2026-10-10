@@ -37,5 +37,5 @@ public partial class InventoryBalance
 
     [ForeignKey("PartId")]
     [InverseProperty("InventoryBalances")]
-    public virtual Part Part { get; set; } = null!;
+    public virtual Parts Part { get; set; } = null!;
 }

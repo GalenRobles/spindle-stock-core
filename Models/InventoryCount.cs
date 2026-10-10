@@ -51,5 +51,5 @@ public partial class InventoryCount
 
     [ForeignKey("PartId")]
     [InverseProperty("InventoryCounts")]
-    public virtual Part Part { get; set; } = null!;
+    public virtual Parts Part { get; set; } = null!;
 }

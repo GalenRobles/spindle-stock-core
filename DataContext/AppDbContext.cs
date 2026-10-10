@@ -38,7 +38,7 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<OutboxEvent> OutboxEvents { get; set; }
 
-    public virtual DbSet<Part> Parts { get; set; }
+    public virtual DbSet<Parts> Parts { get; set; }
 
     public virtual DbSet<PartPolicy> PartPolicies { get; set; }
 
@@ -215,7 +215,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Published).HasDefaultValue(false);
         });
 
-        modelBuilder.Entity<Part>(entity =>
+        modelBuilder.Entity<Parts>(entity =>
         {
             entity.HasKey(e => e.PartId).HasName("parts_pkey");
 

@@ -47,5 +47,5 @@ public partial class UnmatchedReceipt
 
     [ForeignKey("ResolvedPartId")]
     [InverseProperty("UnmatchedReceipts")]
-    public virtual Part? ResolvedPart { get; set; }
+    public virtual Parts? ResolvedPart { get; set; }
 }

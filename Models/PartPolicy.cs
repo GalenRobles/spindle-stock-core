@@ -30,5 +30,5 @@ public partial class PartPolicy
 
     [ForeignKey("PartId")]
     [InverseProperty("PartPolicy")]
-    public virtual Part Part { get; set; } = null!;
+    public virtual Parts Part { get; set; } = null!;
 }

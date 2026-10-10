@@ -31,7 +31,7 @@ public partial class ReorderSuggestion
 
     [ForeignKey("PartId")]
     [InverseProperty("ReorderSuggestion")]
-    public virtual Part Part { get; set; } = null!;
+    public virtual Parts Part { get; set; } = null!;
 
     [ForeignKey("SuggestionId")]
     [InverseProperty("Suggestions")]

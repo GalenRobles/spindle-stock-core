@@ -352,7 +352,7 @@ public partial class KafkaConsumerService : BackgroundService
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger.LogWarning("Base de datos no lista (¿se aplicó TallerBase.sql?): {Message}", ex.Message);
+                _logger.LogWarning("Base de datos no lista (¿se aplicó init.sql?): {Message}", ex.Message);
                 await Task.Delay(TimeSpan.FromSeconds(3), ct);
             }
         }

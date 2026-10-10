@@ -30,7 +30,7 @@ public class PartUpsertedHandler : IEventHandler
 
         if (existing is null)
         {
-            _db.Parts.Add(new Part
+            _db.Parts.Add(new Parts
             {
                 PartId = data.PartId,
                 Sku = data.Sku,

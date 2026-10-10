@@ -9,7 +9,7 @@ namespace AlmacenTaller.Models;
 [Table("parts")]
 [Index("Active", Name = "idx_parts_active")]
 [Index("SkuNorm", Name = "idx_parts_sku_norm")]
-public partial class Part
+public partial class Parts
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)] // el ID viene del sistema del taller

@@ -13,7 +13,7 @@ public class IndexModel : PageModel
         _context = context;
     }
 
-    public List<Part> Piezas { get; set; } = new();
+    public List<Parts> Piezas { get; set; } = new();
 
     public void OnGet()
     {

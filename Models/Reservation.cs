@@ -67,7 +67,7 @@ public partial class Reservation
 
     [ForeignKey("PartId")]
     [InverseProperty("Reservations")]
-    public virtual Part Part { get; set; } = null!;
+    public virtual Parts Part { get; set; } = null!;
 
     [ForeignKey("WorkOrderId")]
     [InverseProperty("Reservations")]

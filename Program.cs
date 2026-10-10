@@ -5,7 +5,7 @@ using AlmacenTaller.Messaging;
 using AlmacenTaller.Services;
 using AlmacenTaller.Services.Handlers;
 using Microsoft.EntityFrameworkCore;
-
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // Conexión a PostgreSQL
@@ -26,6 +26,7 @@ builder.Services.AddSingleton<EventStore>();
 builder.Services.AddScoped<IEventHandler, PartUpsertedHandler>();
 builder.Services.AddScoped<IEventHandler, LocationUpsertedHandler>();
 builder.Services.AddScoped<IEventHandler, PurchaseItemReceivedHandler>();
+builder.Services.AddHostedService<KafkaProducerService>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

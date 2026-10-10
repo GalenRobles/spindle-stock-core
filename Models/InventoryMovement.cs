@@ -71,5 +71,5 @@ public partial class InventoryMovement
 
     [ForeignKey("PartId")]
     [InverseProperty("InventoryMovements")]
-    public virtual Part Part { get; set; } = null!;
+    public virtual Parts Part { get; set; } = null!;
 }

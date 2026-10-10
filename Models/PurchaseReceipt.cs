@@ -73,7 +73,7 @@ public partial class PurchaseReceipt
 
     [ForeignKey("MatchedPartId")]
     [InverseProperty("PurchaseReceipts")]
-    public virtual Part? MatchedPart { get; set; }
+    public virtual Parts? MatchedPart { get; set; }
 
     [InverseProperty("Line")]
     public virtual UnmatchedReceipt? UnmatchedReceipt { get; set; }
