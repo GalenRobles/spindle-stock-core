@@ -23,7 +23,7 @@ public class PartPayload
     public int PartId { get; set; }
 
     [JsonPropertyName("sku")]
-    public string Sku { get; set; } = string.Empty;
+    public string? Sku { get; set; }
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
@@ -37,6 +37,18 @@ public class PartPayload
     [JsonPropertyName("subgroup")]
     public string? Subgroup { get; set; }
 
+    [JsonPropertyName("unit")]
+    public UnitPayload? Unit { get; set; }
+
     [JsonPropertyName("active")]
     public bool Active { get; set; }
+}
+
+public class UnitPayload
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 }
