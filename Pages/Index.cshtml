@@ -10,9 +10,9 @@
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                 <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                ROCEEL Spindle Operations
+                Roceel - Almacen de Refacciones
             </h1>
-            <p class="text-sm text-slate-400">Monitoreo de inventario crítico y reserva atómica de refacciones para husillos CNC</p>
+            <p class="text-sm text-slate-400">Control de existencias y reservas de refacciones para husillos CNC</p>
         </div>
         <div class="mt-4 md:mt-0 flex items-center gap-3">
             <span id="connectionBadge" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">
@@ -22,7 +22,7 @@
     </div>
 
     <!-- Barra de KPIs -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
             <p class="text-xs font-medium text-slate-400">Total Refacciones</p>
             <p class="text-2xl font-bold text-white mt-1">@Model.Piezas.Count</p>
@@ -49,6 +49,39 @@
             <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Catálogo de Piezas en Taller</h2>
             <span class="text-xs text-slate-400">Actualización en tiempo real activa</span>
         </div>
+        <!-- Bloque de busqueda-->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border-b border-slate-700">
+    <div class="md:col-span-2">
+        <label for="buscarPieza"
+               class="block mb-2 text-sm font-medium text-slate-300">
+            Buscar refacción
+        </label>
+
+        <input id="buscarPieza"
+               type="search"
+               placeholder="SKU, descripción o categoría..."
+               class="w-full rounded-lg border border-slate-600 bg-slate-900
+                      px-4 py-3 text-white placeholder-slate-400
+                      focus:outline-none focus:ring-2 focus:ring-sky-500" />
+    </div>
+
+    <div>
+        <label for="filtrarEstado"
+               class="block mb-2 text-sm font-medium text-slate-300">
+            Estado del inventario
+        </label>
+
+        <select id="filtrarEstado"
+                class="w-full rounded-lg border border-slate-600 bg-slate-900
+                       px-4 py-3 text-white
+                       focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="">Todos los estados</option>
+            <option value="critico">Sin disponibilidad</option>
+            <option value="bajo">Stock bajo</option>
+            <option value="optimo">Stock suficiente</option>
+        </select>
+    </div>
+</div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-300">
                 <thead class="bg-slate-900/60 text-xs uppercase font-medium text-slate-400 border-b border-slate-700">
