@@ -14,6 +14,24 @@
 <body class="bg-slate-900 text-slate-100 min-h-screen">
     
     <div class="container">
+    <nav aria-label="Navegación principal"
+     class="flex flex-wrap gap-2 py-4 mb-4 border-b border-slate-700">
+
+    <a asp-page="/Index"
+       class="rounded-lg px-4 py-2 text-sm font-semibold
+              text-slate-200 bg-slate-800 hover:bg-slate-700
+              transition-colors">
+        Almacén
+    </a>
+
+    <a asp-page="/OrdenTrabajo"
+       class="rounded-lg px-4 py-2 text-sm font-semibold
+              text-slate-200 bg-slate-800 hover:bg-slate-700
+              transition-colors">
+        Órdenes de trabajo
+    </a>
+
+</nav>
         <main role="main" class="pb-3">
             @RenderBody()
         </main>

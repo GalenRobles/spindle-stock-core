@@ -11,4 +11,41 @@
     <p class="text-sm text-slate-400">
         Consulta las refacciones reservadas, entregadas y pendientes de una orden.
     </p>
+    <!-- Buscador de orden -->
+<section class="rounded-xl border border-slate-700 bg-slate-800 p-5">
+    <label for="codigoOrden"
+           class="block mb-2 text-sm font-medium text-slate-300">
+        Código de orden de trabajo
+    </label>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+        <input id="codigoOrden"
+               type="search"
+               placeholder="Ejemplo: OT-1024"
+               class="w-full flex-1 rounded-lg border border-slate-600
+                      bg-slate-900 px-4 py-3 text-white
+                      placeholder-slate-400 focus:outline-none
+                      focus:ring-2 focus:ring-sky-500" />
+
+        <button type="button"
+                class="rounded-lg bg-sky-500 px-6 py-3 font-semibold
+                       text-slate-950 hover:bg-sky-400 transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-sky-300">
+            Buscar orden
+        </button>
+    </div>
+</section>
+
+<!-- Estado inicial -->
+<section class="rounded-xl border border-dashed border-slate-600
+                bg-slate-800/30 px-6 py-12 text-center">
+    <h2 class="text-lg font-semibold text-white">
+        Consulta una orden de trabajo
+    </h2>
+
+    <p class="mt-2 text-sm text-slate-400">
+        Ingresa el código para ver sus refacciones reservadas,
+        entregadas y pendientes.
+    </p>
+</section>
 </div>
