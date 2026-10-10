@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AlmacenTaller.DataContext;
+using AlmacenTaller.Models.Events;
 using AlmacenTaller.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -138,10 +139,14 @@ public partial class KafkaConsumerService
         using var scope = _serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        if (string.IsNullOrWhiteSpace(payload.Sku))
+        {
+            // Pieza sin identificar: registrar como faltante o enviar a revisión
+            return;
+        }
         // 1. Limpiar el SKU para evitar problemas de espacios o mayúsculas
         string cleanSku = payload.Sku.Trim().ToUpperInvariant();
-        var part = await db.Parts.FirstOrDefaultAsync(p => p.Sku.ToUpper() == cleanSku);
-
+        var part = await db.Parts.FirstOrDefaultAsync(p => p.Sku != null && p.Sku.ToUpper() == cleanSku);
         if (part == null)
         {
             // CASO DE PRUEBA "DESORDEN": Nos piden reservar algo que aún no existe en catálogo.

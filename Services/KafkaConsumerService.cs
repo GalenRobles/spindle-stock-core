@@ -365,10 +365,8 @@ public partial class KafkaConsumerService : BackgroundService
 
         using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = _bootstrapServers }).Build();
 
-        while (true)
+        while (!ct.IsCancellationRequested)
         {
-            ct.ThrowIfCancellationRequested();
-
             try
             {
                 var meta = admin.GetMetadata(TimeSpan.FromSeconds(5));
@@ -397,5 +395,7 @@ public partial class KafkaConsumerService : BackgroundService
 
             await Task.Delay(TimeSpan.FromSeconds(2), ct);
         }
+
+        return Array.Empty<int>();
     }
 }
