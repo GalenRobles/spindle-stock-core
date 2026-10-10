@@ -79,23 +79,22 @@
         También puedes ingresar los códigos manualmente.
     </p>
 
-    <!-- Espacio para la cámara -->
-    <div class="mt-5 overflow-hidden rounded-xl border
-                border-dashed border-slate-600 bg-slate-900">
-        <div id="camaraInicial"
-             class="flex min-h-[200px] items-center justify-center p-6 text-center">
-            <p class="text-sm text-slate-400">
-                La vista de la cámara aparecerá aquí.
-            </p>
-        </div>
+    <label for="destinoEscaneo"
+       class="block mt-5 mb-2 text-sm font-medium text-slate-300">
+    ¿Qué vas a escanear?
+</label>
 
-        <video id="videoEscaner"
-               hidden
-               playsinline
-               muted
-               class="w-full">
-        </video>
-    </div>
+<select id="destinoEscaneo"
+        class="w-full rounded-lg border border-slate-600
+               bg-slate-900 px-4 py-3 text-white">
+    <option value="codigoUbicacion">Ubicación de origen</option>
+    <option value="codigoPieza">Refacción</option>
+    <option value="ubicacionDestino">Ubicación destino (transferencia)</option>
+</select>
+
+<div id="lectorQr"
+     class="mt-4 overflow-hidden rounded-xl bg-slate-900">
+</div>
 
     <button id="activarCamara"
             type="button"
@@ -329,89 +328,137 @@
      aria-live="polite"
      class="text-sm text-slate-300"></div>
 </div>
-@section Scripts {
+
+
+   @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
     <script>
-        const botonCamara = document.getElementById("activarCamara");
-        const video = document.getElementById("videoEscaner");
-        const mensajeInicial = document.getElementById("camaraInicial");
-        const estadoEscaneo = document.getElementById("estadoEscaneo");
+        const boton = document.getElementById("activarCamara");
+        const destino = document.getElementById("destinoEscaneo");
+        const estado = document.getElementById("estadoEscaneo");
 
-        let flujoCamara = null;
+        let lector = null;
+        let ocupado = false;
+        let lecturaRecibida = false;
 
-        function detenerCamara() {
-            if (flujoCamara) {
-                flujoCamara.getTracks().forEach(track => track.stop());
-                flujoCamara = null;
+        async function detenerEscaneo() {
+            if (lector?.isScanning) {
+                await lector.stop();
             }
 
-            video.srcObject = null;
-            video.hidden = true;
-            mensajeInicial.hidden = false;
-            botonCamara.textContent = "Activar cámara";
+            boton.textContent = "Activar cámara";
+            destino.disabled = false;
         }
 
-        botonCamara.addEventListener("click", async () => {
-            if (flujoCamara) {
-                detenerCamara();
-                estadoEscaneo.textContent = "Cámara detenida.";
-                return;
-            }
+        boton.addEventListener("click", async () => {
+            if (ocupado) return;
 
-            if (!window.isSecureContext ||
-                !navigator.mediaDevices?.getUserMedia) {
-                estadoEscaneo.textContent =
-                    "Abre la página mediante HTTPS para utilizar la cámara.";
-                return;
-            }
-
-            botonCamara.disabled = true;
-            estadoEscaneo.textContent = "Solicitando acceso a la cámara…";
+            ocupado = true;
+            boton.disabled = true;
 
             try {
-                flujoCamara = await navigator.mediaDevices.getUserMedia({
-                    audio: false,
-                    video: {
-                        facingMode: { ideal: "environment" }
-                    }
+                if (lector?.isScanning) {
+                    await detenerEscaneo();
+                    estado.textContent = "Cámara detenida.";
+                    return;
+                }
+
+                if (!window.isSecureContext ||
+                    !navigator.mediaDevices?.getUserMedia) {
+                    estado.textContent =
+                        "Abre la página con HTTPS para utilizar la cámara.";
+                    return;
+                }
+
+                if (typeof Html5Qrcode === "undefined") {
+                    estado.textContent =
+                        "No se pudo cargar el lector QR. Recarga la página.";
+                    return;
+                }
+
+                lector ??= new Html5Qrcode("lectorQr", {
+                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                    verbose: false
                 });
 
-                video.srcObject = flujoCamara;
-                video.hidden = false;
-                mensajeInicial.hidden = true;
+                const campoDestino = destino.value;
+                lecturaRecibida = false;
+                destino.disabled = true;
+                estado.textContent = "Solicitando acceso a la cámara…";
 
-                await video.play();
+                await lector.start(
+                    { facingMode: "environment" },
+                    { fps: 10 },
+                    async (texto) => {
+                        if (ocupado || lecturaRecibida) return;
 
-                botonCamara.textContent = "Detener cámara";
-                estadoEscaneo.textContent = "Cámara activada.";
+                        const contenido = texto.trim();
+                        const esPieza = campoDestino === "codigoPieza";
+                        const prefijoEsperado = esPieza ? "SKU:" : "UBI:";
+
+                        if (!contenido.startsWith(prefijoEsperado)) {
+                            estado.textContent = esPieza
+                                ? "Escanea un QR de refacción con prefijo SKU:."
+                                : "Escanea un QR de ubicación con prefijo UBI:.";
+                            return;
+                        }
+
+                        const codigo = contenido
+                            .slice(prefijoEsperado.length)
+                            .trim();
+
+                        if (!codigo) {
+                            estado.textContent = "El QR no contiene un código.";
+                            return;
+                        }
+
+                        lecturaRecibida = true;
+                        ocupado = true;
+                        boton.disabled = true;
+
+                        const campo = document.getElementById(campoDestino);
+                        campo.value = codigo;
+                        campo.dispatchEvent(
+                            new Event("input", { bubbles: true })
+                        );
+
+                        try {
+                            await detenerEscaneo();
+                            estado.textContent = `Código leído: ${codigo}`;
+                        } catch (error) {
+                            estado.textContent =
+                                "Código leído. No se pudo detener la cámara; recarga la página.";
+                            console.error(error);
+                        } finally {
+                            ocupado = false;
+                            boton.disabled = false;
+                        }
+                    },
+                    () => {
+                        // No encontrar un QR en cada imagen es normal.
+                    }
+                );
+
+                boton.textContent = "Detener cámara";
+                estado.textContent = "Apunta la cámara al código QR.";
             } catch (error) {
-                detenerCamara();
+                destino.disabled = false;
 
-                const mensajes = {
-                    NotAllowedError:
-                        "Permite el acceso a la cámara en tu navegador.",
-                    NotFoundError:
-                        "No se encontró una cámara en este dispositivo.",
-                    NotReadableError:
-                        "No se pudo acceder a la cámara. Revisa si otra aplicación la está usando."
-                };
+                estado.textContent =
+                    "No se pudo iniciar la cámara. Revisa los permisos del navegador y que otra aplicación no la esté usando.";
 
-                estadoEscaneo.textContent =
-                    mensajes[error.name] ||
-                    "No se pudo iniciar la cámara. Intenta nuevamente.";
-
-                console.error("Error de cámara:", error);
+                console.error("Error del escáner:", error);
             } finally {
-                botonCamara.disabled = false;
+                ocupado = false;
+                boton.disabled = false;
             }
         });
 
         document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                detenerCamara();
-                estadoEscaneo.textContent = "Cámara detenida.";
+            if (document.hidden && !ocupado) {
+                detenerEscaneo().catch(console.error);
             }
         });
-
-        window.addEventListener("pagehide", detenerCamara);
     </script>
 }
