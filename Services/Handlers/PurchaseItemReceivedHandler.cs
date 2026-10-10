@@ -65,10 +65,16 @@ public class PurchaseItemReceivedHandler : IEventHandler
             string cleanSku = NormalizeSku(rawPartNumber);
             string cleanDesc = NormalizeSku(description);
 
+            // Preparamos las variables en mayúsculas
+            string rawUpper = rawPartNumber.Trim().ToUpper();
+            string descUpper = description.Trim().ToUpper();
+
+            // Usamos .ToUpper() para que PostgreSQL haga una búsqueda sin distinguir mayúsculas/minúsculas
             var matchingParts = await _db.Parts.Where(p =>
                 p.SkuNorm == cleanSku ||
-                (p.Sku != null && p.Sku == rawPartNumber.Trim()) ||
-                (cleanDesc != "" && (p.SkuNorm == cleanDesc || p.Sku == description.Trim()))).ToListAsync(ct);
+                (p.Sku != null && p.Sku.ToUpper() == rawUpper) ||
+                (cleanDesc != "" && (p.SkuNorm == cleanDesc || (p.Sku != null && p.Sku.ToUpper() == descUpper)))
+            ).ToListAsync(ct);
 
             if (!matchingParts.Any())
             {
