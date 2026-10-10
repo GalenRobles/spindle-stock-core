@@ -25,37 +25,72 @@ public class InspectionVoidedHandler : IEventHandler
         long inspectionId = root.TryGetProperty("inspection_id", out var inspId) ? inspId.GetInt64() : 0;
         long workOrderId = root.TryGetProperty("work_order_id", out var woId) ? woId.GetInt64() : 0;
 
-        // 1. Buscar las reservas activas ligadas a esta inspección o orden de trabajo y liberarlas
-        var reservations = await _db.Reservations
-            .Where(r => (inspectionId != 0 && r.InspectionId == inspectionId) || (workOrderId != 0 && r.WorkOrderId == workOrderId))
-            .Where(r => r.Status == "active")
-            .ToListAsync(ct);
-
-        foreach (var res in reservations)
+        if (inspectionId <= 0)
         {
-            res.Status = "voided";
+            throw new InvalidOperationException("inspection.voided sin inspection_id válido.");
+        }
 
-            // Reintegrar la cantidad reservada al balance general de inventario
+        var inspection = await _db.Inspections.SingleOrDefaultAsync(
+            candidate => candidate.InspectionId == inspectionId, ct);
+        if (inspection is null)
+        {
+            throw new MissingDependencyException("Inspection",
+                $"La inspección {inspectionId} aún no existe.");
+        }
+
+        if (workOrderId > 0 && inspection.WorkOrderId != workOrderId)
+        {
+            throw new InvalidOperationException("La inspección no pertenece a la orden indicada.");
+        }
+
+        var needs = await _db.WorkOrderNeeds
+            .Where(need => need.WorkOrderId == inspection.WorkOrderId
+                && need.InspectionId == inspectionId
+                && need.Status == "active")
+            .ToListAsync(ct);
+        var lineIds = needs.Select(need => need.BomLineId).ToArray();
+
+        var reservations = await _db.Reservations
+            .Where(reservation => reservation.WorkOrderId == inspection.WorkOrderId
+                && lineIds.Contains(reservation.BomLineId)
+                && reservation.Status == "active")
+            .ToListAsync(ct);
+        foreach (var reservation in reservations)
+        {
+            reservation.Status = "cancelled";
+            reservation.CancelledAt = DateTime.UtcNow;
+            reservation.UpdatedAt = DateTime.UtcNow;
+
             var balance = await _db.InventoryBalances
-                .FirstOrDefaultAsync(b => b.PartId == res.PartId && b.LocationId == res.LocationId, ct);
-
-            if (balance != null)
+                .FirstOrDefaultAsync(candidate => candidate.PartId == reservation.PartId
+                    && candidate.LocationId == reservation.LocationId, ct);
+            if (balance is not null)
             {
-                balance.Reserved = Math.Max(0, balance.Reserved - res.Quantity);
+                balance.Reserved = Math.Max(0, balance.Reserved - reservation.Quantity);
                 balance.UpdatedAt = DateTime.UtcNow;
             }
         }
 
-        // 2. Cerrar o actualizar faltantes abiertos de esta orden
         var shortages = await _db.Shortages
-            .Where(s => s.WorkOrderId == workOrderId && s.Status == "open")
+            .Where(shortage => shortage.WorkOrderId == inspection.WorkOrderId
+                && lineIds.Contains(shortage.BomLineId)
+                && shortage.Status == "open")
             .ToListAsync(ct);
 
-        foreach (var s in shortages)
+        foreach (var shortage in shortages)
         {
-            s.Status = "voided";
+            shortage.Status = "closed";
+            shortage.ResolvedAt = DateTime.UtcNow;
         }
 
+        foreach (var need in needs)
+        {
+            need.Status = "closed";
+            need.UpdatedAt = DateTime.UtcNow;
+        }
+
+        inspection.Status = "voided";
+        inspection.VoidedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         _logger.LogInformation("Inspección {InspectionId} anulada. Reservas liberadas.", inspectionId);
     }
