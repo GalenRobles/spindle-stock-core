@@ -358,39 +358,37 @@ public partial class KafkaConsumerService : BackgroundService
         }
     }
 
-    /// <summary>Espera a que existan los 4 tópicos de entrada y devuelve las particiones de shop.catalog.</summary>
+/// <summary>Espera a que existan los 4 tópicos de entrada y devuelve las particiones de shop.catalog.</summary>
     private async Task<IReadOnlyList<int>> WaitForTopicsAsync(CancellationToken ct)
     {
         var required = new[] { KafkaTopics.ShopCatalog }.Concat(KafkaTopics.ShopOperational).ToArray();
 
         using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = _bootstrapServers }).Build();
 
-        if (existing == null)
+        while (!ct.IsCancellationRequested)
         {
-            db.Parts.Add(new Part
+            try
             {
-                PartId = partData.PartId,
-                Sku = partData.Sku,
-                Name = partData.Name,
-                Family = partData.Family,
-                PartGroup = partData.Group,
-                Subgroup = partData.Subgroup,
-                Active = partData.Active
-            });
-            _logger.LogInformation("Pieza insertada: {Sku} (ID: {PartId})", partData.Sku, partData.PartId);
-        }
-        else
-        {
-            existing.Sku = partData.Sku;
-            existing.Name = partData.Name;
-            existing.Family = partData.Family;
-            existing.PartGroup = partData.Group;
-            existing.Subgroup = partData.Subgroup;
-            existing.Active = partData.Active;
-            _logger.LogInformation("Pieza actualizada: {Sku} (ID: {PartId})", partData.Sku, partData.PartId);
-        }
+                var metadata = admin.GetMetadata(TimeSpan.FromSeconds(5));
+                var existingTopics = metadata.Topics.Select(t => t.Topic).ToHashSet();
+
+                if (required.All(t => existingTopics.Contains(t)))
+                {
+                    var catalogTopic = metadata.Topics.First(t => t.Topic == KafkaTopics.ShopCatalog);
+                    return catalogTopic.Partitions.Select(p => p.PartitionId).ToList();
+                }
+
+                var missing = required.Where(t => !existingTopics.Contains(t));
+                _logger.LogInformation("Esperando la creación de los tópicos: {Missing}", string.Join(", ", missing));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Esperando a Kafka Admin Client... {Message}", ex.Message);
+            }
 
             await Task.Delay(TimeSpan.FromSeconds(2), ct);
         }
+
+        return Array.Empty<int>();
     }
-}
+} // Cie

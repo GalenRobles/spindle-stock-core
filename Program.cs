@@ -47,5 +47,6 @@ app.MapWarehouseEndpoints();
 app.MapRazorPages();
 app.MapHub<InventarioHub>("/inventarioHub");
 
+app.MapWarehouseEndpoints();
 // Puerto obligatorio para el evaluador de tests
 app.Run("http://0.0.0.0:5012");
