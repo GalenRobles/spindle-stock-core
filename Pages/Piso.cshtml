@@ -329,3 +329,89 @@
      aria-live="polite"
      class="text-sm text-slate-300"></div>
 </div>
+@section Scripts {
+    <script>
+        const botonCamara = document.getElementById("activarCamara");
+        const video = document.getElementById("videoEscaner");
+        const mensajeInicial = document.getElementById("camaraInicial");
+        const estadoEscaneo = document.getElementById("estadoEscaneo");
+
+        let flujoCamara = null;
+
+        function detenerCamara() {
+            if (flujoCamara) {
+                flujoCamara.getTracks().forEach(track => track.stop());
+                flujoCamara = null;
+            }
+
+            video.srcObject = null;
+            video.hidden = true;
+            mensajeInicial.hidden = false;
+            botonCamara.textContent = "Activar cámara";
+        }
+
+        botonCamara.addEventListener("click", async () => {
+            if (flujoCamara) {
+                detenerCamara();
+                estadoEscaneo.textContent = "Cámara detenida.";
+                return;
+            }
+
+            if (!window.isSecureContext ||
+                !navigator.mediaDevices?.getUserMedia) {
+                estadoEscaneo.textContent =
+                    "Abre la página mediante HTTPS para utilizar la cámara.";
+                return;
+            }
+
+            botonCamara.disabled = true;
+            estadoEscaneo.textContent = "Solicitando acceso a la cámara…";
+
+            try {
+                flujoCamara = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: {
+                        facingMode: { ideal: "environment" }
+                    }
+                });
+
+                video.srcObject = flujoCamara;
+                video.hidden = false;
+                mensajeInicial.hidden = true;
+
+                await video.play();
+
+                botonCamara.textContent = "Detener cámara";
+                estadoEscaneo.textContent = "Cámara activada.";
+            } catch (error) {
+                detenerCamara();
+
+                const mensajes = {
+                    NotAllowedError:
+                        "Permite el acceso a la cámara en tu navegador.",
+                    NotFoundError:
+                        "No se encontró una cámara en este dispositivo.",
+                    NotReadableError:
+                        "No se pudo acceder a la cámara. Revisa si otra aplicación la está usando."
+                };
+
+                estadoEscaneo.textContent =
+                    mensajes[error.name] ||
+                    "No se pudo iniciar la cámara. Intenta nuevamente.";
+
+                console.error("Error de cámara:", error);
+            } finally {
+                botonCamara.disabled = false;
+            }
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                detenerCamara();
+                estadoEscaneo.textContent = "Cámara detenida.";
+            }
+        });
+
+        window.addEventListener("pagehide", detenerCamara);
+    </script>
+}
