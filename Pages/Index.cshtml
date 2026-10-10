@@ -21,27 +21,58 @@
         </div>
     </div>
 
-    <!-- Barra de KPIs -->
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Total Refacciones</p>
-            <p class="text-2xl font-bold text-white mt-1">@Model.Piezas.Count</p>
-        </div>
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Total Stock Físico</p>
-            <p class="text-2xl font-bold text-sky-400 mt-1">@Model.Piezas.Sum(p => p.StockFisico)</p>
-        </div>
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Piezas Comprometidas (Reservadas)</p>
-            <p class="text-2xl font-bold text-amber-400 mt-1">@Model.Piezas.Sum(p => p.Reservado)</p>
-        </div>
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Alertas de Desabasto</p>
-            <p class="text-2xl font-bold text-rose-500 mt-1">
-                @Model.Piezas.Count(p => p.Disponible <= 0)
-            </p>
-        </div>
+ <!-- Barra de KPIs -->
+<div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+
+    <div class="rounded-xl border border-slate-700 bg-slate-800 p-5">
+        <p class="text-sm font-medium text-slate-300">
+            Refacciones
+        </p>
+        <p class="mt-3 text-3xl font-bold text-white">
+            @Model.Piezas.Count
+        </p>
+        <p class="mt-2 text-xs text-slate-400">
+            Tipos de pieza en catálogo
+        </p>
     </div>
+
+    <div class="rounded-xl border border-slate-700 bg-slate-800 p-5">
+        <p class="text-sm font-medium text-slate-300">
+            Stock físico
+        </p>
+        <p class="mt-3 text-3xl font-bold text-sky-400">
+            @Model.Piezas.Sum(p => p.StockFisico)
+        </p>
+        <p class="mt-2 text-xs text-slate-400">
+            Unidades en almacén
+        </p>
+    </div>
+
+    <div class="rounded-xl border border-slate-700 bg-slate-800 p-5">
+        <p class="text-sm font-medium text-slate-300">
+            Reservadas
+        </p>
+        <p class="mt-3 text-3xl font-bold text-amber-400">
+            @Model.Piezas.Sum(p => p.Reservado)
+        </p>
+        <p class="mt-2 text-xs text-slate-400">
+            Unidades comprometidas
+        </p>
+    </div>
+
+    <div class="rounded-xl border border-rose-500/30 bg-rose-500/10 p-5">
+        <p class="text-sm font-medium text-rose-200">
+            Sin disponibilidad
+        </p>
+        <p class="mt-3 text-3xl font-bold text-rose-400">
+            @Model.Piezas.Count(p => p.Disponible <= 0)
+        </p>
+        <p class="mt-2 text-xs text-rose-200">
+            Refacciones que requieren atención
+        </p>
+    </div>
+
+</div>
 
     <!-- Tabla de Refacciones -->
     <div class="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
