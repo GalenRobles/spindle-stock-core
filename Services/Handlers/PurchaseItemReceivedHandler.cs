@@ -4,6 +4,7 @@ using AlmacenTaller.Messaging;
 using AlmacenTaller.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Globalization;
 
 namespace AlmacenTaller.Services.Handlers;
 
@@ -159,7 +160,7 @@ public class PurchaseItemReceivedHandler : IEventHandler
             part_id = part.PartId,
             location_id = RECEIVING_LOCATION,
             quantity = quantity,
-            unit_cost = unitPrice,
+            unit_cost = unitPrice.ToString(CultureInfo.InvariantCulture),
             currency = currency,
             purchase_line_id = lineId
         };

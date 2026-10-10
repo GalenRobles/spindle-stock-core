@@ -122,7 +122,7 @@ public partial class KafkaConsumerService : BackgroundService
             ConsumeResult<string, string>? result;
             try
             {
-                result = consumer.Consume(ct);
+                result = consumer.Consume(TimeSpan.FromSeconds(1));
             }
             catch (ConsumeException ex)
             {
@@ -131,7 +131,11 @@ public partial class KafkaConsumerService : BackgroundService
                 continue;
             }
 
-            if (result?.Message == null) continue;
+            if (result?.Message == null)
+            {
+                await DrainCatalogAsync(catalog, catalogPartitions, null, ct);
+                continue;
+            }
 
             // No hay orden entre tópicos: se vacía el catálogo antes de cada mensaje.
             await DrainCatalogAsync(catalog, catalogPartitions, null, ct);
@@ -283,9 +287,6 @@ public partial class KafkaConsumerService : BackgroundService
 
         while (!ct.IsCancellationRequested)
         {
-            var caughtUp = IsCaughtUp(catalog, partitions);
-            if (caughtUp && (quietWindow is null || DateTime.UtcNow - lastActivity >= quietWindow.Value))
-                return;
 
             try
             {
@@ -303,7 +304,9 @@ public partial class KafkaConsumerService : BackgroundService
                 _logger.LogWarning("Error leyendo {Topic}: {Reason}", KafkaTopics.ShopCatalog, ex.Error.Reason);
                 await Task.Delay(TimeSpan.FromSeconds(1), ct);
             }
-
+            var caughtUp = IsCaughtUp(catalog, partitions);
+            if (caughtUp && (quietWindow is null || DateTime.UtcNow - lastActivity >= quietWindow.Value))
+                return;
             // Si no hay quietWindow y el catálogo no avanza, no se bloquea todo el servicio para siempre.
             if (!caughtUp && quietWindow is null && DateTime.UtcNow - lastActivity > CatalogMaxStall)
             {
@@ -324,9 +327,15 @@ public partial class KafkaConsumerService : BackgroundService
                 var watermarks = catalog.QueryWatermarkOffsets(tp, TimeSpan.FromSeconds(5));
                 var position = catalog.Position(tp);
 
-                // High = siguiente offset a escribir; Position = siguiente offset a leer.
-                if (watermarks.High.Value > 0 && position.Value < watermarks.High.Value)
-                    return false;
+                _logger.LogInformation(
+                "Catalogo particion {Partition}: posicion={Position}, final={High}",
+                p, position.Value, watermarks.High.Value);
+
+                if (watermarks.High.Value > 0 &&
+                position.Value < watermarks.High.Value)
+                    {
+                        return false;
+                    }
             }
             return true;
         }

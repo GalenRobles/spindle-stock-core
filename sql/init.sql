@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS part_policies (
 
 CREATE TABLE IF NOT EXISTS locations (
     location_id     BIGINT PRIMARY KEY,
-    code            VARCHAR(20) NOT NULL UNIQUE,
+    code            VARCHAR(20) NOT NULL,
     name            VARCHAR NOT NULL,
     is_workbench    BOOLEAN NOT NULL DEFAULT FALSE,
     active          BOOLEAN NOT NULL DEFAULT TRUE,

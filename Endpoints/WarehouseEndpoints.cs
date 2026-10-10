@@ -10,23 +10,44 @@ public static class WarehouseEndpoints
     public static void MapWarehouseEndpoints(this IEndpointRouteBuilder app)
     {
         // 1. Disponibilidad de piezas
-        app.MapGet("/parts/{partId:int}/availability", async (int partId, AppDbContext db) =>
+        app.MapGet("/parts/{partId:int}/availability",
+        async (int partId, AppDbContext db) =>
         {
             var balances = await db.InventoryBalances
                 .Where(b => b.PartId == partId)
                 .Select(b => new
                 {
                     location_id = b.LocationId,
-                    on_hand = b.OnHand
+                    on_hand = b.OnHand,
+                    reserved = b.Reserved,
+                    available = b.OnHand - b.Reserved
                 })
                 .ToListAsync();
 
-            return Results.Ok(new { locations = balances });
+            var onHand = balances.Sum(b => b.on_hand);
+            var reserved = balances.Sum(b => b.reserved);
+
+            return Results.Ok(new
+            {
+                on_hand = onHand,
+                reserved = reserved,
+                available = onHand - reserved,
+                locations = balances
+            });
         });
+
+
 
         // 2. Salida de material (Issues)
         app.MapPost("/issues", async (IssueRequest req, AppDbContext db) =>
         {
+            var order = await db.WorkOrders
+            .FirstOrDefaultAsync(w => w.Code == req.work_order_code);
+
+            if (order == null)
+            {
+                return Results.NotFound();
+            }
             var balance = await db.InventoryBalances
                 .FirstOrDefaultAsync(b => b.PartId == req.part_id && b.LocationId == req.location_id);
 
@@ -51,9 +72,10 @@ public static class WarehouseEndpoints
             };
             db.StockMovements.Add(movement);
 
-            // Registrar evento de salida en el Outbox para que KafkaProducerService lo publique
+            // Registrar evento de salida en el Outbox para que KafkaProducerService lo 
             var payload = new
             {
+                work_order_id = order.WorkOrderId,
                 work_order_code = req.work_order_code,
                 part_id = req.part_id,
                 location_id = req.location_id,
@@ -83,6 +105,7 @@ public static class WarehouseEndpoints
             var movements = await db.StockMovements
                 .Where(m => m.PartId == partId)
                 .OrderBy(m => m.CreatedAt)
+                .ThenBy(m => m.MovementId)
                 .ToListAsync();
 
             var entries = new List<object>();
@@ -109,4 +132,9 @@ public static class WarehouseEndpoints
     }
 }
 
-public record IssueRequest(string work_order_code, int part_id, int location_id, int quantity, string issued_by);
+public record IssueRequest(
+    string work_order_code,
+    int part_id,
+    int location_id,
+    int quantity,
+    JsonElement issued_by);

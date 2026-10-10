@@ -26,7 +26,9 @@ builder.Services.AddSingleton<EventStore>();
 builder.Services.AddScoped<IEventHandler, PartUpsertedHandler>();
 builder.Services.AddScoped<IEventHandler, LocationUpsertedHandler>();
 builder.Services.AddScoped<IEventHandler, PurchaseItemReceivedHandler>();
+builder.Services.AddScoped<IEventHandler, WorkOrderOpenedHandler>();
 builder.Services.AddHostedService<KafkaProducerService>();
+builder.Services.AddScoped<IEventHandler, WorkOrderOpenedHandler>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -43,11 +45,11 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
 
 // Rutas REST para los tests de contrato (a implementar por el rol de BD)
 app.MapWarehouseEndpoints();
+app.MapTransferCountEndpoints();
 
 // Mapeo de rutas existentes y SignalR
 app.MapRazorPages();
 app.MapHub<InventarioHub>("/inventarioHub");
 
-app.MapWarehouseEndpoints();
 // Puerto obligatorio para el evaluador de tests
 app.Run("http://0.0.0.0:5012");
