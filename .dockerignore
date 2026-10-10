@@ -1,0 +1,10 @@
+# Keep build contexts small and avoid copying generated files or secrets.
+**/.git
+**/.vs
+**/bin
+**/obj
+**/__pycache__
+*.pyc
+*.pyo
+*.user
+.env

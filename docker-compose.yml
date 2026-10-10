@@ -1,23 +1,93 @@
+# Broker + consola + simulador del taller + PostgreSQL.
+#
+#   docker compose up -d          # Levanta todo
+#   docker compose logs -f simulator
+#
+# Desde su máquina el broker está en localhost:19092; desde otro contenedor de esta red,
+# en redpanda:9092. Consola: http://localhost:8080 · Panel del simulador: http://localhost:8090
+#
+# Variables útiles (en .env o al llamar a compose):
+#   SPEED=3600   segundos simulados por segundo real: 3600 = 1 h por segundo, 6 semanas en ~17 min (0 = sin pausas)
+#   RESET=1      borra y recrea los tópicos al arrancar el simulador
+
 services:
+  # --- BASE DE DATOS DEL EQUIPO ---
   postgres:
     image: postgres:16-alpine
-    container_name: taller_postgres
-    restart: always
+    container_name: roceel_postgres
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: almacen_db
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: almacen_inteligente
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./TallerBase.sql:/docker-entrypoint-initdb.d/TallerBase.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d almacen_inteligente"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: taller_redis
-    restart: always
+  # --- INFRAESTRUCTURA OFICIAL DEL RETO ---
+  redpanda:
+    image: redpandadata/redpanda:v24.2.7
+    container_name: roceel_redpanda
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
     ports:
-      - "6379:6379"
+      - "19092:19092"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health", "--exit-when-healthy"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+  console:
+    image: redpandadata/console:v2.7.2
+    container_name: roceel_console
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8080:8080"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  simulator:
+    build:
+      context: .
+      dockerfile: simulator/Dockerfile
+    container_name: roceel_simulator
+    environment:
+      BROKER: redpanda:9092
+      SPEED: ${SPEED:-3600}
+      RESET: ${RESET:-0}
+    ports:
+      - "8090:8090"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  # Pruebas de contrato (no arrancan con `up`):
+  #   docker compose run --rm contract-tests --api http://host.docker.internal:8000
+  contract-tests:
+    profiles: ["tests"]
+    build:
+      context: .
+      dockerfile: contract-tests/Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redpanda:
+        condition: service_healthy
 
 volumes:
   pgdata:
+    driver: local
