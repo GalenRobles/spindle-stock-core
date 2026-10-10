@@ -25,7 +25,7 @@ builder.Services.AddHostedService<KafkaConsumerService>();
 builder.Services.AddSingleton<EventStore>();
 builder.Services.AddScoped<IEventHandler, PartUpsertedHandler>();
 builder.Services.AddScoped<IEventHandler, LocationUpsertedHandler>();
-
+builder.Services.AddScoped<IEventHandler, PurchaseItemReceivedHandler>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
