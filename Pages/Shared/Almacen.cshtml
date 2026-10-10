@@ -14,38 +14,56 @@
 <body class="bg-slate-900 text-slate-100 min-h-screen">
     
     <div class="container">
-    <nav aria-label="Navegación principal"
-     class="flex flex-wrap gap-2 py-4 mb-4 border-b border-slate-700">
+    <!-- Botón para abrir el menú -->
+<div class="px-4 py-3 border-b border-slate-700">
+    <button id="abrirMenu"
+            type="button"
+            aria-controls="menuLateral"
+            aria-expanded="false"
+            class="rounded-lg border border-slate-600 bg-slate-800
+                   px-4 py-2 font-semibold text-white
+                   hover:bg-slate-700 transition-colors">
+        ☰ Menú
+    </button>
+</div>
 
-    <a asp-page="/Index"
-       class="rounded-lg px-4 py-2 text-sm font-semibold
-              text-slate-200 bg-slate-800 hover:bg-slate-700
-              transition-colors">
-        Almacén
-    </a>
+<!-- Menú lateral -->
+<dialog id="menuLateral"
+        aria-labelledby="tituloMenu"
+        class="menu-lateral">
+    <div class="flex items-center justify-between gap-4
+                border-b border-slate-700 p-5">
+        <h2 id="tituloMenu" class="text-xl font-bold text-white">
+            Roceel
+        </h2>
 
-    <a asp-page="/OrdenTrabajo"
-       class="rounded-lg px-4 py-2 text-sm font-semibold
-              text-slate-200 bg-slate-800 hover:bg-slate-700
-              transition-colors">
-        Órdenes de trabajo
-    </a>
+        <button id="cerrarMenu"
+                type="button"
+                aria-label="Cerrar menú"
+                class="rounded-lg px-3 py-2 text-slate-300
+                       hover:bg-slate-700 hover:text-white">
+            ✕
+        </button>
+    </div>
 
-    <a asp-page="/Piso"
-       class="rounded-lg px-4 py-2 text-sm font-semibold
-          text-slate-200 bg-slate-800 hover:bg-slate-700
-          transition-colors">
-     Piso móvil
-    </a>
-    <a asp-page="/Kardex"
-       class="rounded-lg px-4 py-2 text-sm font-semibold
-          text-slate-200 bg-slate-800 hover:bg-slate-700
-          transition-colors">
-     Kardex
-    
-    </a>
+    <nav aria-label="Navegación principal" class="space-y-2 p-4">
+        <a asp-page="/Index" class="enlace-menu">
+            Almacén
+        </a>
 
-</nav>
+        <a asp-page="/OrdenTrabajo" class="enlace-menu">
+            Órdenes de trabajo
+        </a>
+
+        <a asp-page="/Piso" class="enlace-menu">
+            Piso móvil
+        </a>
+
+        <a asp-page="/Kardex" class="enlace-menu">
+            Kardex
+        </a>
+    </nav>
+</dialog>
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
@@ -60,6 +78,40 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+    (() => {
+        const menu = document.getElementById("menuLateral");
+        const abrir = document.getElementById("abrirMenu");
+        const cerrar = document.getElementById("cerrarMenu");
+
+        abrir.addEventListener("click", () => {
+            menu.showModal();
+            abrir.setAttribute("aria-expanded", "true");
+        });
+
+        cerrar.addEventListener("click", () => menu.close());
+
+        menu.addEventListener("click", (evento) => {
+            const limites = menu.getBoundingClientRect();
+
+            const fueraDelMenu =
+                evento.clientX < limites.left ||
+                evento.clientX > limites.right ||
+                evento.clientY < limites.top ||
+                evento.clientY > limites.bottom;
+
+            if (evento.target === menu && fueraDelMenu) {
+                menu.close();
+            }
+        });
+
+        menu.addEventListener("close", () => {
+            abrir.setAttribute("aria-expanded", "false");
+            abrir.focus();
+        });
+    })();
+</script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
