@@ -80,7 +80,7 @@ public class KafkaConsumerService : BackgroundService
                 Sku = partData.Sku,
                 Name = partData.Name,
                 Family = partData.Family,
-                Group = partData.Group,
+                PartGroup = partData.Group,
                 Subgroup = partData.Subgroup,
                 Active = partData.Active
             });
@@ -91,7 +91,7 @@ public class KafkaConsumerService : BackgroundService
             existing.Sku = partData.Sku;
             existing.Name = partData.Name;
             existing.Family = partData.Family;
-            existing.Group = partData.Group;
+            existing.PartGroup = partData.Group;
             existing.Subgroup = partData.Subgroup;
             existing.Active = partData.Active;
             _logger.LogInformation("Pieza actualizada: {Sku} (ID: {PartId})", partData.Sku, partData.PartId);
