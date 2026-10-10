@@ -68,4 +68,264 @@
             </button>
         </div>
     </section>
+    <!-- Escaneo: pendiente de integrar cámara y lectura de códigos -->
+<section class="rounded-xl border border-slate-700 bg-slate-800 p-5">
+    <h2 class="text-lg font-semibold text-white">
+        Ubicación y refacción
+    </h2>
+
+    <p class="mt-2 text-sm text-slate-400">
+        Escanea primero la ubicación y después la pieza.
+        También puedes ingresar los códigos manualmente.
+    </p>
+
+    <!-- Espacio para la cámara -->
+    <div class="mt-5 overflow-hidden rounded-xl border
+                border-dashed border-slate-600 bg-slate-900">
+        <div id="camaraInicial"
+             class="flex min-h-[200px] items-center justify-center p-6 text-center">
+            <p class="text-sm text-slate-400">
+                La vista de la cámara aparecerá aquí.
+            </p>
+        </div>
+
+        <video id="videoEscaner"
+               hidden
+               playsinline
+               muted
+               class="w-full">
+        </video>
+    </div>
+
+    <button id="activarCamara"
+            type="button"
+            class="mt-4 w-full rounded-lg bg-sky-500 px-4 py-3
+                   font-semibold text-slate-950 hover:bg-sky-400
+                   transition-colors focus:outline-none
+                   focus:ring-2 focus:ring-sky-300">
+        Activar cámara
+    </button>
+
+    <div class="mt-6 space-y-4">
+        <div>
+            <label for="codigoUbicacion"
+                   class="block mb-2 text-sm font-medium text-slate-300">
+                Código de ubicación
+            </label>
+
+            <input id="codigoUbicacion"
+                   name="codigoUbicacion"
+                   type="text"
+                   autocomplete="off"
+                   placeholder="Escanea o escribe la ubicación"
+                   class="w-full rounded-lg border border-slate-600
+                          bg-slate-900 px-4 py-3 text-white
+                          placeholder-slate-400 focus:outline-none
+                          focus:ring-2 focus:ring-sky-500" />
+        </div>
+
+        <div>
+            <label for="codigoPieza"
+                   class="block mb-2 text-sm font-medium text-slate-300">
+                Código de refacción
+            </label>
+
+            <input id="codigoPieza"
+                   name="codigoPieza"
+                   type="text"
+                   autocomplete="off"
+                   placeholder="Escanea o escribe el SKU"
+                   class="w-full rounded-lg border border-slate-600
+                          bg-slate-900 px-4 py-3 text-white
+                          placeholder-slate-400 focus:outline-none
+                          focus:ring-2 focus:ring-sky-500" />
+        </div>
+    </div>
+
+    <div id="estadoEscaneo"
+         role="status"
+         aria-live="polite"
+         class="mt-4 text-sm text-slate-300"></div>
+</section>
+<!-- Datos del movimiento: pendiente de conectar -->
+<section class="rounded-xl border border-slate-700 bg-slate-800 p-5">
+    <h2 class="text-lg font-semibold text-white">
+        Datos del movimiento
+    </h2>
+
+    <div class="mt-5 space-y-4">
+        <div>
+            <label for="cantidadMovimiento"
+                   class="block mb-2 text-sm font-medium text-slate-300">
+                Cantidad
+            </label>
+
+            <input id="cantidadMovimiento"
+                   name="cantidadMovimiento"
+                   type="number"
+                   min="0"
+                   step="1"
+                   inputmode="numeric"
+                   aria-describedby="ayudaCantidad"
+                   placeholder="Ingresa la cantidad"
+                   class="w-full rounded-lg border border-slate-600
+                          bg-slate-900 px-4 py-3 text-white
+                          placeholder-slate-400 focus:outline-none
+                          focus:ring-2 focus:ring-sky-500" />
+
+            <p id="ayudaCantidad" class="mt-2 text-xs text-slate-400">
+                Para conteo, ingresa la cantidad física encontrada.
+                Para retiro o transferencia, ingresa las unidades a mover.
+            </p>
+        </div>
+
+        <!-- Mostrar al seleccionar retiro -->
+        <div id="camposRetiro" hidden>
+            <label for="ordenRetiro"
+                   class="block mb-2 text-sm font-medium text-slate-300">
+                Orden de trabajo
+            </label>
+
+            <input id="ordenRetiro"
+                   name="ordenRetiro"
+                   type="text"
+                   placeholder="Código de la orden"
+                   class="w-full rounded-lg border border-slate-600
+                          bg-slate-900 px-4 py-3 text-white
+                          placeholder-slate-400 focus:outline-none
+                          focus:ring-2 focus:ring-sky-500" />
+        </div>
+
+        <!-- Mostrar al seleccionar transferencia -->
+        <div id="camposTransferencia" hidden>
+            <label for="ubicacionDestino"
+                   class="block mb-2 text-sm font-medium text-slate-300">
+                Ubicación destino
+            </label>
+
+            <input id="ubicacionDestino"
+                   name="ubicacionDestino"
+                   type="text"
+                   placeholder="Escanea o escribe la ubicación destino"
+                   class="w-full rounded-lg border border-slate-600
+                          bg-slate-900 px-4 py-3 text-white
+                          placeholder-slate-400 focus:outline-none
+                          focus:ring-2 focus:ring-sky-500" />
+            <button id="escanearDestino"
+                    type="button"
+                    class="mt-3 w-full rounded-lg border border-sky-500/40
+                          bg-sky-500/10 px-4 py-3 font-semibold text-sky-300
+                         hover:bg-sky-500/20 transition-colors">
+    Escanear ubicación destino
+            </button>
+        </div>
+
+        <div>
+            <label for="observacionesMovimiento"
+                   class="block mb-2 text-sm font-medium text-slate-300">
+                Observaciones (opcional)
+            </label>
+
+            <textarea id="observacionesMovimiento"
+                      name="observacionesMovimiento"
+                      rows="3"
+                      placeholder="Agrega una nota sobre el movimiento"
+                      class="w-full rounded-lg border border-slate-600
+                             bg-slate-900 px-4 py-3 text-white
+                             placeholder-slate-400 focus:outline-none
+                             focus:ring-2 focus:ring-sky-500"></textarea>
+        </div>
+    </div>
+
+    <button id="revisarMovimiento"
+            type="button"
+            class="mt-5 w-full rounded-lg bg-sky-500 px-4 py-3
+                   font-semibold text-slate-950 hover:bg-sky-400
+                   transition-colors focus:outline-none
+                   focus:ring-2 focus:ring-sky-300">
+        Revisar movimiento
+    </button>
+</section>
+<!-- Mostrar al revisar un movimiento válido -->
+<section id="resumenMovimiento" hidden
+         class="rounded-xl border border-sky-500/30 bg-slate-800 p-5">
+
+    <h2 class="text-lg font-semibold text-white">
+        Confirmar movimiento
+    </h2>
+
+    <p class="mt-2 text-sm text-slate-400">
+        Revisa los datos antes de registrar la operación.
+    </p>
+
+    <dl class="mt-5 divide-y divide-slate-700">
+        <div class="flex justify-between gap-4 py-3">
+            <dt class="text-sm text-slate-400">Operación</dt>
+            <dd id="resumenOperacion"
+                class="text-right text-sm font-semibold text-white"></dd>
+        </div>
+
+        <div class="flex justify-between gap-4 py-3">
+            <dt class="text-sm text-slate-400">Ubicación</dt>
+            <dd id="resumenUbicacion"
+                class="break-all text-right text-sm text-white"></dd>
+        </div>
+
+        <div class="flex justify-between gap-4 py-3">
+            <dt class="text-sm text-slate-400">Refacción</dt>
+            <dd id="resumenPieza"
+                class="break-all text-right text-sm text-white"></dd>
+        </div>
+
+        <div class="flex justify-between gap-4 py-3">
+            <dt class="text-sm text-slate-400">Cantidad</dt>
+            <dd id="resumenCantidad"
+                class="text-right text-lg font-bold text-sky-400"></dd>
+        </div>
+
+        <div id="filaResumenOrden" hidden
+             class="flex justify-between gap-4 py-3">
+            <dt class="text-sm text-slate-400">Orden de trabajo</dt>
+            <dd id="resumenOrden"
+                class="break-all text-right text-sm text-white"></dd>
+        </div>
+
+        <div id="filaResumenDestino" hidden
+             class="flex justify-between gap-4 py-3">
+            <dt class="text-sm text-slate-400">Destino</dt>
+            <dd id="resumenDestino"
+                class="break-all text-right text-sm text-white"></dd>
+        </div>
+
+        <div id="filaResumenObservaciones" hidden class="py-3">
+            <dt class="text-sm text-slate-400">Observaciones</dt>
+            <dd id="resumenObservaciones"
+                class="mt-2 break-words text-sm text-white"></dd>
+        </div>
+    </dl>
+
+    <div class="mt-5 flex flex-col gap-3">
+        <button id="confirmarMovimiento"
+                type="button"
+                class="w-full rounded-lg bg-sky-500 px-4 py-3
+                       font-semibold text-slate-950 hover:bg-sky-400
+                       transition-colors">
+            Confirmar y registrar
+        </button>
+
+        <button id="editarMovimiento"
+                type="button"
+                class="w-full rounded-lg border border-slate-600
+                       px-4 py-3 font-semibold text-slate-200
+                       hover:bg-slate-700 transition-colors">
+            Volver a editar
+        </button>
+    </div>
+</section>
+
+<!-- Mensajes de validación, registro o error -->
+<div id="estadoMovimiento"
+     role="status"
+     aria-live="polite"
+     class="text-sm text-slate-300"></div>
 </div>
