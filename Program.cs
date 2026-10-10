@@ -14,7 +14,7 @@ builder.Services.AddHostedService<KafkaProducerService>();
 // Conexión a PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Servicios web, tiempo real (SignalR) y consumidor de Kafka
 builder.Services.AddRazorPages();

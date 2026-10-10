@@ -365,27 +365,30 @@ public partial class KafkaConsumerService : BackgroundService
 
         using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = _bootstrapServers }).Build();
 
-        while (true)
+        if (existing == null)
         {
-            ct.ThrowIfCancellationRequested();
-            try
+            db.Parts.Add(new Part
             {
-                var metadata = admin.GetMetadata(TimeSpan.FromSeconds(5));
-                var ready = required.All(topic => metadata.Topics.Any(t =>
-                    t.Topic == topic && t.Error.Code == ErrorCode.NoError && t.Partitions.Count > 0));
-
-                if (ready)
-                {
-                    return metadata.Topics.First(t => t.Topic == KafkaTopics.ShopCatalog)
-                        .Partitions.Select(p => p.PartitionId).OrderBy(i => i).ToList();
-                }
-
-                _logger.LogInformation("Esperando a que el simulador cree los tópicos del taller...");
-            }
-            catch (KafkaException ex)
-            {
-                _logger.LogWarning("Broker no disponible aún: {Reason}", ex.Error.Reason);
-            }
+                PartId = partData.PartId,
+                Sku = partData.Sku,
+                Name = partData.Name,
+                Family = partData.Family,
+                PartGroup = partData.Group,
+                Subgroup = partData.Subgroup,
+                Active = partData.Active
+            });
+            _logger.LogInformation("Pieza insertada: {Sku} (ID: {PartId})", partData.Sku, partData.PartId);
+        }
+        else
+        {
+            existing.Sku = partData.Sku;
+            existing.Name = partData.Name;
+            existing.Family = partData.Family;
+            existing.PartGroup = partData.Group;
+            existing.Subgroup = partData.Subgroup;
+            existing.Active = partData.Active;
+            _logger.LogInformation("Pieza actualizada: {Sku} (ID: {PartId})", partData.Sku, partData.PartId);
+        }
 
             await Task.Delay(TimeSpan.FromSeconds(2), ct);
         }
