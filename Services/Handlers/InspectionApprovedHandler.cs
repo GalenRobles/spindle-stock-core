@@ -30,6 +30,27 @@ public class InspectionApprovedHandler : IEventHandler
 
             long workOrderId = root.TryGetProperty("work_order_id", out var woId) ? woId.GetInt64() : 0;
             long inspectionId = root.TryGetProperty("inspection_id", out var inspId) ? inspId.GetInt64() : 0;
+            string kind = root.TryGetProperty("kind", out var kindElem) ? kindElem.GetString() ?? "quick" : "quick";
+
+            // Extracción segura de la fecha de ocurrencia compatible con DateTime / DateTimeOffset
+            DateTime occurredAt = DateTime.UtcNow;
+            if (root.TryGetProperty("occurred_at", out var occElem))
+            {
+                if (occElem.TryGetDateTime(out var dt)) occurredAt = dt;
+                else if (occElem.TryGetDateTimeOffset(out var dto)) occurredAt = dto.UtcDateTime;
+            }
+            else if (envelope.OccurredAt != default)
+            {
+                occurredAt = envelope.OccurredAt.UtcDateTime;
+            }
+
+            if (inspectionId > 0)
+            {
+                // GARANTÍA DE LLAVE FORÁNEA: Insertamos preventivamente la inspección si aún no existe
+                await _db.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO inspections (inspection_id, work_order_id, kind, status, created_at, occurred_at) VALUES ({0}, {1}, {2}, {3}, {4}, {5}) ON CONFLICT (inspection_id) DO NOTHING",
+                    new object[] { inspectionId, workOrderId, kind, "approved", DateTime.UtcNow, occurredAt }, ct);
+            }
 
             var items = new List<JsonElement>();
             if (root.TryGetProperty("items", out var itemsElement) && itemsElement.ValueKind == JsonValueKind.Array)
@@ -51,7 +72,6 @@ public class InspectionApprovedHandler : IEventHandler
                 if (!string.IsNullOrWhiteSpace(sku))
                 {
                     string cleanSku = sku.Trim().ToUpperInvariant();
-                    // Buscamos usando EF.Property para evitar problemas de nombres de propiedades
                     var foundPart = await _db.Parts.FirstOrDefaultAsync(p =>
                         EF.Property<string>(p, "SkuNorm") == cleanSku ||
                         EF.Property<string>(p, "Sku") == sku.Trim(), ct);
@@ -74,6 +94,7 @@ public class InspectionApprovedHandler : IEventHandler
 
                 long bomLineId = item.TryGetProperty("bom_line_id", out var bl) ? bl.GetInt64() : 0;
                 long inspectionItemId = item.TryGetProperty("inspection_item_id", out var ii) ? ii.GetInt64() : 0;
+                string itemName = item.TryGetProperty("name", out var n) ? n.GetString() ?? $"Item-{inspectionItemId}" : $"Item-{inspectionItemId}";
 
                 int qty = 0;
                 if (item.TryGetProperty("quantity", out var q) && q.ValueKind == JsonValueKind.Number) qty = q.GetInt32();
@@ -136,6 +157,7 @@ public class InspectionApprovedHandler : IEventHandler
                         WorkOrderId = workOrderId,
                         BomLineId = bomLineId,
                         PartId = partId,
+                        Name = itemName, // Asignamos el nombre para cumplir con la restricción NOT NULL de shortages
                         MissingQuantity = shortageQty,
                         CoveredQuantity = 0,
                         Status = "open",

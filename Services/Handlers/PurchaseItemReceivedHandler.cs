@@ -94,6 +94,7 @@ public class PurchaseItemReceivedHandler : IEventHandler
                 _db.UnmatchedReceipts.Add(new UnmatchedReceipt
                 {
                     LineId = lineId,
+                    PartNumber = rawPartNumber, // <-- ¡Asignamos el número de parte obligatorio!
                     Status = "open",
                     CandidatePartIds = candidateIds
                 });
