@@ -193,6 +193,16 @@
                           bg-slate-900 px-4 py-3 text-white
                           placeholder-slate-400 focus:outline-none
                           focus:ring-2 focus:ring-sky-500" />
+                          
+             <button id="buscarOrden" type="button"
+             class="mt-3 w-full rounded-lg bg-sky-600 px-4 py-3 font-semibold text-white">
+                    Buscar orden
+                </button>
+
+                <p id="estadoOrden" role="status"
+                class="mt-2 text-sm text-slate-300"></p>
+
+                <div id="materialesOrden" class="mt-3 space-y-2"></div>
         </div>
 
         <!-- Mostrar al seleccionar transferencia -->
@@ -461,4 +471,87 @@
             }
         });
     </script>
+    <script>
+(() => {
+    const campo = document.getElementById("ordenRetiro");
+    const boton = document.getElementById("buscarOrden");
+    const estado = document.getElementById("estadoOrden");
+    const materiales = document.getElementById("materialesOrden");
+
+    async function buscarOrden() {
+        const codigo = campo.value.trim();
+        materiales.replaceChildren();
+
+        const filaResumen = document.getElementById("filaResumenOrden");
+        const resumen = document.getElementById("resumenOrden");
+        if (filaResumen) filaResumen.hidden = true;
+
+        if (!codigo) {
+            estado.textContent = "Escribe el código de la orden.";
+            return;
+        }
+
+        boton.disabled = true;
+        estado.textContent = "Buscando orden…";
+
+        try {
+            const respuesta = await fetch(
+                `/work-orders/${encodeURIComponent(codigo)}/materials`
+            );
+
+            if (respuesta.status === 404) {
+                estado.textContent = "No se encontró esa orden.";
+                return;
+            }
+
+            if (!respuesta.ok) {
+                throw new Error(`HTTP ${respuesta.status}`);
+            }
+
+            const orden = await respuesta.json();
+
+            estado.textContent =
+                `Orden ${orden.code}: ${orden.lines.length} materiales.`;
+
+            if (resumen) resumen.textContent = orden.code;
+            if (filaResumen) filaResumen.hidden = false;
+
+            for (const linea of orden.lines) {
+                const tarjeta = document.createElement("div");
+                tarjeta.className =
+                    "rounded-lg border border-slate-600 bg-slate-900 p-3";
+
+                const nombre = document.createElement("p");
+                nombre.className = "font-semibold text-white";
+                nombre.textContent = linea.name;
+
+                const detalle = document.createElement("p");
+                detalle.className = "mt-1 text-sm text-slate-300";
+                detalle.textContent =
+                    `Requerido: ${linea.required} · ` +
+                    `Reservado: ${linea.reserved} · ` +
+                    `Entregado: ${linea.issued} · ` +
+                    `Faltante: ${linea.missing ?? "Por determinar"}`;
+
+                tarjeta.append(nombre, detalle);
+                materiales.append(tarjeta);
+            }
+        } catch (error) {
+            estado.textContent = "No se pudo consultar la orden.";
+            console.error("Error al buscar orden:", error);
+        } finally {
+            boton.disabled = false;
+        }
+    }
+
+    boton.addEventListener("click", buscarOrden);
+
+    campo.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            if (!boton.disabled) buscarOrden();
+        }
+    });
+})();
+</script>
 }
