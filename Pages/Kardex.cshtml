@@ -58,4 +58,127 @@
          role="status"
          aria-live="polite"
          class="text-sm text-slate-300"></div>
+         <!-- Mostrar al encontrar una refacción -->
+<section id="detalleKardex" hidden
+         class="overflow-hidden rounded-xl border border-slate-700 bg-slate-800">
+
+    <div class="p-5 border-b border-slate-700">
+        <p id="kardexSku"
+           class="font-mono text-sm font-semibold text-sky-400"></p>
+
+        <h2 id="kardexNombre"
+            class="mt-2 text-xl font-bold text-white"></h2>
+
+        <p id="kardexCategoria"
+           class="mt-1 text-sm text-slate-400"></p>
+    </div>
+
+    <!-- Filtros pendientes de conectar -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+                gap-4 p-5 border-b border-slate-700">
+        <div>
+            <label for="fechaDesde"
+                   class="block mb-2 text-sm text-slate-300">
+                Desde
+            </label>
+            <input id="fechaDesde"
+                   name="fechaDesde"
+                   type="date"
+                   class="w-full rounded-lg border border-slate-600
+                          bg-slate-900 px-3 py-3 text-white
+                          focus:outline-none focus:ring-2 focus:ring-sky-500
+                          [color-scheme:dark]" />
+        </div>
+
+        <div>
+            <label for="fechaHasta"
+                   class="block mb-2 text-sm text-slate-300">
+                Hasta
+            </label>
+            <input id="fechaHasta"
+                   name="fechaHasta"
+                   type="date"
+                   class="w-full rounded-lg border border-slate-600
+                          bg-slate-900 px-3 py-3 text-white
+                          focus:outline-none focus:ring-2 focus:ring-sky-500
+                          [color-scheme:dark]" />
+        </div>
+
+        <div>
+            <label for="tipoMovimiento"
+                   class="block mb-2 text-sm text-slate-300">
+                Tipo de movimiento
+            </label>
+            <select id="tipoMovimiento"
+                    name="tipoMovimiento"
+                    class="w-full rounded-lg border border-slate-600
+                           bg-slate-900 px-3 py-3 text-white
+                           focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="">Todos</option>
+                <option value="entrada">Entrada</option>
+                <option value="retiro">Retiro</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="ajuste">Ajuste por conteo</option>
+            </select>
+        </div>
+
+        <div class="flex items-end">
+            <button id="filtrarKardex"
+                    type="button"
+                    class="w-full rounded-lg bg-sky-500 px-4 py-3
+                           font-semibold text-slate-950
+                           hover:bg-sky-400 transition-colors">
+                Aplicar filtros
+            </button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full min-w-[1100px] text-left text-sm text-slate-300">
+            <caption class="sr-only">
+                Historial de movimientos de la refacción
+            </caption>
+
+            <thead class="bg-slate-900/50 text-xs uppercase text-slate-400">
+                <tr>
+                    <th scope="col" class="px-5 py-4">Fecha y hora</th>
+                    <th scope="col" class="px-5 py-4">Movimiento</th>
+                    <th scope="col" class="px-5 py-4">Ubicación</th>
+                    <th scope="col" class="px-5 py-4 text-right">Entrada</th>
+                    <th scope="col" class="px-5 py-4 text-right">Salida</th>
+                    <th scope="col" class="px-5 py-4 text-right">Saldo</th>
+                    <th scope="col" class="px-5 py-4">Referencia / OT</th>
+                    <th scope="col" class="px-5 py-4">Responsable</th>
+                </tr>
+            </thead>
+
+            <tbody id="movimientosKardex" class="divide-y divide-slate-700">
+                <!-- Insertar movimientos reales al conectar los datos -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mostrar cuando la consulta no tenga movimientos -->
+    <div id="kardexSinMovimientos" hidden
+         class="px-6 py-10 text-center">
+        <h3 class="font-semibold text-white">
+            No hay movimientos para mostrar
+        </h3>
+        <p class="mt-2 text-sm text-slate-400">
+            Si aplicaste filtros, prueba con otro rango de fechas
+            o tipo de movimiento.
+        </p>
+    </div>
+</section>
+
+<!-- Mostrar cuando el SKU consultado no exista -->
+<section id="piezaNoEncontrada" hidden
+         class="rounded-xl border border-slate-700 bg-slate-800 p-6">
+    <h2 class="text-lg font-semibold text-white">
+        Refacción no encontrada
+    </h2>
+    <p class="mt-2 text-sm text-slate-400">
+        Verifica el SKU e intenta nuevamente.
+    </p>
+</section>
 </div>
