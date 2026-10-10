@@ -232,7 +232,6 @@ public class PurchaseItemReceivedHandler : IEventHandler
             {
                 reservation = new Reservation
                 {
-<<<<<<< HEAD
                     WorkOrderId = shortage.WorkOrderId,
                     BomLineId = shortage.BomLineId,
                     PartId = partId,
@@ -244,35 +243,6 @@ public class PurchaseItemReceivedHandler : IEventHandler
                     Status = "active",
                     CreatedAt = occurredAt,
                     UpdatedAt = occurredAt
-=======
-                    var matchedIds = memoryMatches.Select(m => m.PartId).ToList();
-                    matchingParts = await _db.Parts.Where(p => matchedIds.Contains(p.PartId)).ToListAsync(ct);
-                }
-            }
-
-            const long RECEIVING_LOCATION = 100;
-
-            if (matchingParts.Count != 1)
-            {
-                var candidateIds = matchingParts.Select(p => p.PartId).ToList();
-                _logger.LogWarning("Recepción a manual: part_number='{Raw}' tiene {Count} posibles coincidencias.", rawPartNumber, candidateIds.Count);
-
-                _db.UnmatchedReceipts.Add(new UnmatchedReceipt
-                {
-                    LineId = lineId,
-                    PartNumber = rawPartNumber, // <-- ¡Asignamos el número de parte obligatorio!
-                    Status = "open",
-                    CandidatePartIds = candidateIds
-                });
-
-                var unmatchedPayload = new
-                {
-                    purchase_line_id = lineId,
-                    part_number = rawPartNumber,
-                    description = description,
-                    quantity = quantity,
-                    candidates = candidateIds
->>>>>>> c6c32682a7533a0f3e80a7c2cbb8a1ce2fa37844
                 };
                 _db.Reservations.Add(reservation);
             }
