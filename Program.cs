@@ -1,28 +1,27 @@
 using AlmacenTaller.DataContext;
+using AlmacenTaller.Endpoints;
 using AlmacenTaller.Hubs;
 using AlmacenTaller.Messaging;
 using AlmacenTaller.Services;
 using AlmacenTaller.Services.Handlers;
 using Microsoft.EntityFrameworkCore;
 
-
-// Registramos el productor de Kafka para que lea la tabla Outbox y publique los eventos
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddHostedService<KafkaProducerService>();
-
 
 // Conexión a PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
+
+// Productor de Kafka (Outbox u hosted service)
+builder.Services.AddHostedService<KafkaProducerService>();
 
 // Servicios web, tiempo real (SignalR) y consumidor de Kafka
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<KafkaConsumerService>();
 
-// Procesamiento de eventos: control (processed/pending/dead-letter) y un handler por tipo de evento.
-// Para agregar uno nuevo: implementar IEventHandler y registrarlo aquí.
+// Procesamiento de eventos por handlers
 builder.Services.AddSingleton<EventStore>();
 builder.Services.AddScoped<IEventHandler, PartUpsertedHandler>();
 builder.Services.AddScoped<IEventHandler, LocationUpsertedHandler>();
@@ -34,13 +33,19 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 }
 
-// app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
-// Mapeo de rutas y Hub de SignalR
+// Endpoint de salud
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Rutas REST para los tests de contrato (a implementar por el rol de BD)
+app.MapWarehouseEndpoints();
+
+// Mapeo de rutas existentes y SignalR
 app.MapRazorPages();
 app.MapHub<InventarioHub>("/inventarioHub");
 
-app.Run();
+// Puerto obligatorio para el evaluador de tests
+app.Run("http://0.0.0.0:5012");
