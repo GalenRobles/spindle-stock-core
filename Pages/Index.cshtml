@@ -89,6 +89,7 @@
         </label>
 
         <input id="buscarPieza"
+               name="buscarPieza"
                type="search"
                placeholder="SKU, descripción o categoría..."
                class="w-full rounded-lg border border-slate-600 bg-slate-900
@@ -103,6 +104,7 @@
         </label>
 
         <select id="filtrarEstado"
+                name="filtrarEstado"
                 class="w-full rounded-lg border border-slate-600 bg-slate-900
                        px-4 py-3 text-white
                        focus:outline-none focus:ring-2 focus:ring-sky-500">
@@ -128,6 +130,15 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-700/60">
+                @if (!Model.Piezas.Any())
+                    {
+                    <tr>
+                        <td colspan="8"
+                            class="px-5 py-10 text-center text-slate-400">
+                            No hay refacciones para mostrar.
+                        </td>
+                     </tr>
+                    }
                     @foreach (var item in Model.Piezas)
                     {
                         var estadoColor = item.Disponible <= 0 ? "bg-rose-500/20 text-rose-400 border-rose-500/30" :
