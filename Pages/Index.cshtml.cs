@@ -1,7 +1,6 @@
-using AlmacenTaller.Data;
-using AlmacenTaller.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
+using AlmacenTaller.DataContext;
+using AlmacenTaller.Models;
 
 namespace AlmacenTaller.Pages;
 
@@ -14,11 +13,10 @@ public class IndexModel : PageModel
         _context = context;
     }
 
-    public IList<Pieza> Piezas { get; set; } = default!;
+    public List<Part> Piezas { get; set; } = new();
 
-    public async Task OnGetAsync()
+    public void OnGet()
     {
-        // Traemos todas las piezas desde PostgreSQL ordenadas por ID
-        Piezas = await _context.Piezas.OrderBy(p => p.Id).ToListAsync();
+        Piezas = _context.Parts.ToList();
     }
 }
