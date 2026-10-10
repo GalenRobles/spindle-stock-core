@@ -36,13 +36,11 @@ public static class WarehouseEndpoints
             });
         });
 
-
-
         // 2. Salida de material (Issues)
         app.MapPost("/issues", async (IssueRequest req, AppDbContext db) =>
         {
             var order = await db.WorkOrders
-            .FirstOrDefaultAsync(w => w.Code == req.work_order_code);
+                .FirstOrDefaultAsync(w => w.Code == req.work_order_code);
 
             if (order == null)
             {
@@ -72,7 +70,7 @@ public static class WarehouseEndpoints
             };
             db.StockMovements.Add(movement);
 
-            // Registrar evento de salida en el Outbox para que KafkaProducerService lo 
+            // Registrar evento de salida en el Outbox
             var payload = new
             {
                 work_order_id = order.WorkOrderId,
@@ -124,10 +122,26 @@ public static class WarehouseEndpoints
                 });
             }
 
-            // Orden descendente (más reciente primero)
             entries.Reverse();
 
             return Results.Ok(new { entries });
+        });
+
+        // 4. Recepciones sin relacionar
+        app.MapGet("/unmatched-receipts", async (AppDbContext db) =>
+        {
+            var unmatched = await db.UnmatchedReceipts
+                .Where(u => u.Status == "open")
+                .Select(u => new
+                {
+                    // Cambia "UnmatchedReceiptId" por "Id" si tu llave primaria se llama distinto
+                    id = EF.Property<long>(u, "UnmatchedReceiptId"),
+                    purchase_line_id = EF.Property<long>(u, "LineId"),
+                    candidate_part_ids = u.CandidatePartIds ?? new List<long>()
+                })
+                .ToListAsync();
+
+            return Results.Ok(new { items = unmatched });
         });
     }
 }

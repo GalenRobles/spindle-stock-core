@@ -13,22 +13,24 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Productor de Kafka (Outbox u hosted service)
-builder.Services.AddHostedService<KafkaProducerService>();
-
+// Productor de Kafka (Outbox u hosted service  
 // Servicios web, tiempo real (SignalR) y consumidor de Kafka
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
+builder.Services.AddHostedService<KafkaProducerService>();
 builder.Services.AddHostedService<KafkaConsumerService>();
 
 // Procesamiento de eventos por handlers
 builder.Services.AddSingleton<EventStore>();
 builder.Services.AddScoped<IEventHandler, PartUpsertedHandler>();
 builder.Services.AddScoped<IEventHandler, LocationUpsertedHandler>();
-builder.Services.AddScoped<IEventHandler, PurchaseItemReceivedHandler>();
+builder.Services.AddScoped<IEventHandler, PurchaseItemReceivedHandler>();    
 builder.Services.AddScoped<IEventHandler, WorkOrderOpenedHandler>();
-builder.Services.AddHostedService<KafkaProducerService>();
-builder.Services.AddScoped<IEventHandler, WorkOrderOpenedHandler>();
+builder.Services.AddScoped<IEventHandler, InspectionApprovedHandler>();
+builder.Services.AddScoped<IEventHandler, InspectionSubmittedHandler>();
+builder.Services.AddScoped<IEventHandler, InspectionRejectedHandler>();
+builder.Services.AddScoped<IEventHandler, InspectionVoidedHandler>();
+builder.Services.AddScoped<IEventHandler, WorkOrderDeletedHandler>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

@@ -6,7 +6,7 @@ COPY simulator/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY simulator/ ./simulator/
-COPY Data/ ./data/
+COPY data/ ./data/
 
 EXPOSE 8090
 CMD ["python", "simulator/simulator.py"]
