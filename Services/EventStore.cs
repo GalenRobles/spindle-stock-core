@@ -67,7 +67,7 @@ public class EventStore
         await using var connection = await OpenAsync(ct);
         await connection.ExecuteAsync(new CommandDefinition(
             @"INSERT INTO pending_events (event_id, event_type, event_key, payload, missing_entity, next_retry_at)
-              VALUES (@eventId, @eventType, @eventKey, @payload::jsonb, @missingEntity, NOW() + INTERVAL '30 seconds')
+              VALUES (@eventId, @eventType, @eventKey, @payload::jsonb, @missingEntity, NOW() + INTERVAL '2 seconds')
               ON CONFLICT (event_id) DO NOTHING",
             new
             {
@@ -77,6 +77,62 @@ public class EventStore
                 payload = envelope.Raw,
                 missingEntity
             },
+            cancellationToken: ct));
+    }
+
+    public async Task<IReadOnlyList<PendingEventRecord>> GetDuePendingAsync(CancellationToken ct)
+    {
+        await using var connection = await OpenAsync(ct);
+        var dueEvents = await connection.QueryAsync<PendingEventRecord>(new CommandDefinition(
+            @"WITH due AS (
+                  SELECT pending_id
+                    FROM pending_events
+                   WHERE status = 'pending' AND next_retry_at <= NOW()
+                   ORDER BY next_retry_at, pending_id
+                   LIMIT 50
+                   FOR UPDATE SKIP LOCKED
+              )
+              UPDATE pending_events AS pending
+                 SET attempts = pending.attempts + 1,
+                     next_retry_at = NOW() + INTERVAL '2 seconds'
+                FROM due
+               WHERE pending.pending_id = due.pending_id
+              RETURNING pending.event_id AS EventId, pending.payload::text AS Payload",
+            cancellationToken: ct));
+        return dueEvents.AsList();
+    }
+
+    public async Task ReschedulePendingAsync(Guid eventId, string missingEntity, CancellationToken ct)
+    {
+        await using var connection = await OpenAsync(ct);
+        await connection.ExecuteAsync(new CommandDefinition(
+            @"UPDATE pending_events
+                 SET missing_entity = @missingEntity,
+                     next_retry_at = NOW() + INTERVAL '2 seconds'
+               WHERE event_id = @eventId AND status = 'pending'",
+            new { eventId, missingEntity },
+            cancellationToken: ct));
+    }
+
+    public async Task CompletePendingAsync(Guid eventId, CancellationToken ct)
+    {
+        await using var connection = await OpenAsync(ct);
+        await connection.ExecuteAsync(new CommandDefinition(
+            @"UPDATE pending_events
+                 SET status = 'processed', processed_at = NOW()
+               WHERE event_id = @eventId AND status = 'pending'",
+            new { eventId },
+            cancellationToken: ct));
+    }
+
+    public async Task FailPendingAsync(Guid eventId, CancellationToken ct)
+    {
+        await using var connection = await OpenAsync(ct);
+        await connection.ExecuteAsync(new CommandDefinition(
+            @"UPDATE pending_events
+                 SET status = 'failed', processed_at = NOW()
+               WHERE event_id = @eventId AND status = 'pending'",
+            new { eventId },
             cancellationToken: ct));
     }
 
@@ -98,4 +154,10 @@ public class EventStore
             },
             cancellationToken: ct));
     }
+}
+
+public sealed class PendingEventRecord
+{
+    public Guid EventId { get; set; }
+    public string Payload { get; set; } = string.Empty;
 }

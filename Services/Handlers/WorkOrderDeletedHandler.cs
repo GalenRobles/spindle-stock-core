@@ -33,7 +33,9 @@ public class WorkOrderDeletedHandler : IEventHandler
 
         foreach (var res in reservations)
         {
-            res.Status = "deleted";
+            res.Status = "cancelled";
+            res.CancelledAt = DateTime.UtcNow;
+            res.UpdatedAt = DateTime.UtcNow;
 
             var balance = await _db.InventoryBalances
                 .FirstOrDefaultAsync(b => b.PartId == res.PartId && b.LocationId == res.LocationId, ct);
@@ -52,7 +54,26 @@ public class WorkOrderDeletedHandler : IEventHandler
 
         foreach (var s in shortages)
         {
-            s.Status = "deleted";
+            s.Status = "closed";
+            s.ResolvedAt = DateTime.UtcNow;
+        }
+
+        var needs = await _db.WorkOrderNeeds
+            .Where(need => need.WorkOrderId == workOrderId && need.Status == "active")
+            .ToListAsync(ct);
+        foreach (var need in needs)
+        {
+            need.Status = "closed";
+            need.UpdatedAt = DateTime.UtcNow;
+        }
+
+        var order = await _db.WorkOrders.SingleOrDefaultAsync(
+            workOrder => workOrder.WorkOrderId == workOrderId, ct);
+        if (order is not null)
+        {
+            order.IsDeleted = true;
+            order.DeletedAt = DateTime.UtcNow;
+            order.UpdatedAt = DateTime.UtcNow;
         }
 
         await _db.SaveChangesAsync(ct);

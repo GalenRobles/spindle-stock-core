@@ -134,6 +134,7 @@ public partial class KafkaConsumerService : BackgroundService
             if (result?.Message == null)
             {
                 await DrainCatalogAsync(catalog, catalogPartitions, null, ct);
+                await RetryPendingEventsAsync(ct);
                 continue;
             }
 
@@ -142,6 +143,7 @@ public partial class KafkaConsumerService : BackgroundService
 
             await ProcessMessageAsync(result, ct);
             CommitSafe(consumer, result);
+            await RetryPendingEventsAsync(ct);
         }
 
         consumer.Close();
@@ -240,6 +242,90 @@ public partial class KafkaConsumerService : BackgroundService
 
         _logger.LogError("Evento enviado a {Dlq}: {EventType} {EventId}. Error: {Error}",
             KafkaTopics.InventoryDlq, envelope?.EventType, envelope?.EventId, error);
+    }
+
+    private async Task RetryPendingEventsAsync(CancellationToken ct)
+    {
+        var pendingEvents = await _store.GetDuePendingAsync(ct);
+        foreach (var pending in pendingEvents)
+        {
+            if (!EventEnvelope.TryParse(pending.Payload, out var envelope, out var parseError)
+                || envelope is null)
+            {
+                _logger.LogError("Evento pendiente {EventId} no se puede leer: {Error}",
+                    pending.EventId, parseError);
+                await _store.FailPendingAsync(pending.EventId, ct);
+                continue;
+            }
+
+            Exception? lastError = null;
+            var missingDependency = false;
+            for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var handlers = scope.ServiceProvider.GetServices<IEventHandler>()
+                    .Where(handler => handler.EventTypes.Contains(envelope.EventType))
+                    .ToList();
+
+                if (handlers.Count == 0)
+                {
+                    _logger.LogWarning("Evento pendiente {EventId} no tiene handler para {EventType}.",
+                        envelope.EventId, envelope.EventType);
+                    missingDependency = true;
+                    break;
+                }
+
+                try
+                {
+                    foreach (var handler in handlers)
+                    {
+                        await handler.HandleAsync(envelope, ct);
+                    }
+
+                    await _store.MarkAsync(envelope, "processed", ct);
+                    await _store.CompletePendingAsync(envelope.EventId, ct);
+                    _logger.LogInformation("Evento pendiente {EventId} ({EventType}) reprocesado.",
+                        envelope.EventId, envelope.EventType);
+                    lastError = null;
+                    break;
+                }
+                catch (MissingDependencyException ex)
+                {
+                    _logger.LogDebug("Evento pendiente {EventId} sigue esperando {Entity}: {Message}",
+                        envelope.EventId, ex.Entity, ex.Message);
+                    await _store.ReschedulePendingAsync(envelope.EventId, ex.Entity, ct);
+                    missingDependency = true;
+                    break;
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    lastError = ex;
+                    _logger.LogWarning(ex, "Reintento {Attempt}/{Max} falló para evento pendiente {EventId}.",
+                        attempt, MaxAttempts, envelope.EventId);
+                    if (attempt < MaxAttempts)
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(250 * attempt), ct);
+                    }
+                }
+            }
+
+            if (lastError is not null && !missingDependency)
+            {
+                await DlqProducer.ProduceAsync(
+                    KafkaTopics.InventoryDlq,
+                    new Message<string, string> { Key = envelope.Key, Value = pending.Payload },
+                    ct);
+                await _store.SaveDeadLetterAsync(envelope, lastError.Message, MaxAttempts, ct);
+                await _store.MarkAsync(envelope, "failed", ct);
+                await _store.FailPendingAsync(envelope.EventId, ct);
+                _logger.LogError(lastError, "Evento pendiente {EventId} enviado a {Dlq}.",
+                    envelope.EventId, KafkaTopics.InventoryDlq);
+            }
+        }
     }
 
     private void CommitSafe(IConsumer<string, string> consumer, ConsumeResult<string, string> result)
