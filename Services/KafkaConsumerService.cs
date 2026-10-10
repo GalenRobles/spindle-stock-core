@@ -365,30 +365,35 @@ public partial class KafkaConsumerService : BackgroundService
 
         using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = _bootstrapServers }).Build();
 
-        if (existing == null)
+        while (true)
         {
-            db.Parts.Add(new Part
+            ct.ThrowIfCancellationRequested();
+
+            try
             {
-                PartId = partData.PartId,
-                Sku = partData.Sku,
-                Name = partData.Name,
-                Family = partData.Family,
-                PartGroup = partData.Group,
-                Subgroup = partData.Subgroup,
-                Active = partData.Active
-            });
-            _logger.LogInformation("Pieza insertada: {Sku} (ID: {PartId})", partData.Sku, partData.PartId);
-        }
-        else
-        {
-            existing.Sku = partData.Sku;
-            existing.Name = partData.Name;
-            existing.Family = partData.Family;
-            existing.PartGroup = partData.Group;
-            existing.Subgroup = partData.Subgroup;
-            existing.Active = partData.Active;
-            _logger.LogInformation("Pieza actualizada: {Sku} (ID: {PartId})", partData.Sku, partData.PartId);
-        }
+                var meta = admin.GetMetadata(TimeSpan.FromSeconds(5));
+                var existingTopics = meta.Topics.Where(t => !t.Error.IsError).Select(t => t.Topic).ToHashSet();
+
+                if (required.All(r => existingTopics.Contains(r)))
+                {
+                    var catalogTopic = meta.Topics.First(t => t.Topic == KafkaTopics.ShopCatalog);
+                    var partitionCount = catalogTopic.Partitions.Count;
+                    var partitions = Enumerable.Range(0, partitionCount).ToList().AsReadOnly();
+                    _logger.LogInformation("Tópicos encontrados. shop.catalog tiene {Partitions} particiones.", partitionCount);
+                    return partitions;
+                }
+
+                var missing = required.Where(r => !existingTopics.Contains(r)).ToArray();
+                _logger.LogInformation("Esperando tópicos de Kafka: faltan {Missing}. Reintentando en 2 s.", string.Join(", ", missing));
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Error consultando Kafka: {Message}", ex.Message);
+            }
 
             await Task.Delay(TimeSpan.FromSeconds(2), ct);
         }

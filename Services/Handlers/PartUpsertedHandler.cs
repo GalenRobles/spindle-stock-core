@@ -38,7 +38,7 @@ public class PartUpsertedHandler : IEventHandler
                 Family = data.Family,
                 PartGroup = data.Group,
                 Subgroup = data.Subgroup,
-                Unit = data.Unit?.Name ?? string.Empty,
+                UnitName = data.Unit?.Name ?? string.Empty,
                 Active = data.Active
             });
             _logger.LogInformation("Pieza insertada: {Sku} (ID: {PartId})", data.Sku, data.PartId);
@@ -50,7 +50,7 @@ public class PartUpsertedHandler : IEventHandler
             existing.Family = data.Family;
             existing.PartGroup = data.Group;
             existing.Subgroup = data.Subgroup;
-            existing.Unit = data.Unit?.Name ?? string.Empty;
+            existing.UnitName = data.Unit?.Name ?? string.Empty;
             existing.Active = data.Active;
             _logger.LogInformation("Pieza actualizada: {Sku} (ID: {PartId})", data.Sku, data.PartId);
         }
