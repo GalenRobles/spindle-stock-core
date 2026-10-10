@@ -1,5 +1,6 @@
-using AlmacenTaller.Data;
+using AlmacenTaller.DataContext;
 using AlmacenTaller.Hubs;
+using AlmacenTaller.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,9 +10,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Servicios web y SignalR
+// Servicios web, tiempo real (SignalR) y consumidor de Kafka
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
+builder.Services.AddHostedService<KafkaConsumerService>();
 
 var app = builder.Build();
 
@@ -22,12 +24,10 @@ if (!app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
 
-// 3. Mapeo de rutas y Hub
+// Mapeo de rutas y Hub de SignalR
 app.MapRazorPages();
 app.MapHub<InventarioHub>("/inventarioHub");
 

@@ -1,16 +1,30 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace AlmacenTaller.Models;
 
+[Table("parts")]
 public class Part
 {
-    public long PartId { get; set; }
-    public string Sku { get; set; } // Puede ser nulo según el script
-    public string Name { get; set; }
-    public string Family { get; set; }
-    public string PartGroup { get; set; }
-    public string Subgroup { get; set; }
-    public string Unit { get; set; }
-    public string ImageUrl { get; set; }
-    public bool Active { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    [Key]
+    [Column("part_id")]
+    public int PartId { get; set; }
+
+    [Column("sku")]
+    public string Sku { get; set; } = string.Empty;
+
+    [Column("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [Column("family")]
+    public string? Family { get; set; }
+
+    [Column("part_group")]
+    public string? PartGroup { get; set; }
+
+    [Column("subgroup")]
+    public string? Subgroup { get; set; }
+
+    [Column("active")]
+    public bool Active { get; set; } = true;
 }

@@ -1,127 +1,45 @@
 ﻿@page
-@model IndexModel
+@model AlmacenTaller.Pages.IndexModel
 @{
-    ViewData["Title"] = "ROCEEL — Spindle Command Center";
+    ViewData["Title"] = "Catálogo de Piezas";
 }
 
-<div class="space-y-6">
-    <!-- Header principal -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-700 pb-4">
-        <div>
-            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                ROCEEL Spindle Operations
-            </h1>
-            <p class="text-sm text-slate-400">Monitoreo de inventario crítico y reserva atómica de refacciones para husillos CNC</p>
-        </div>
-        <div class="mt-4 md:mt-0 flex items-center gap-3">
-            <span id="connectionBadge" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                Conectando a SignalR...
-            </span>
-        </div>
-    </div>
-
-    <!-- Barra de KPIs -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Total Refacciones</p>
-            <p class="text-2xl font-bold text-white mt-1">@Model.Piezas.Count</p>
-        </div>
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Total Stock Físico</p>
-            <p class="text-2xl font-bold text-sky-400 mt-1">@Model.Piezas.Sum(p => p.StockFisico)</p>
-        </div>
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Piezas Comprometidas (Reservadas)</p>
-            <p class="text-2xl font-bold text-amber-400 mt-1">@Model.Piezas.Sum(p => p.Reservado)</p>
-        </div>
-        <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-            <p class="text-xs font-medium text-slate-400">Alertas de Desabasto</p>
-            <p class="text-2xl font-bold text-rose-500 mt-1">
-                @Model.Piezas.Count(p => p.Disponible <= 0)
-            </p>
-        </div>
-    </div>
-
-    <!-- Tabla de Refacciones -->
-    <div class="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
-        <div class="p-4 border-b border-slate-700/80 bg-slate-800/80 flex justify-between items-center">
-            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Catálogo de Piezas en Taller</h2>
-            <span class="text-xs text-slate-400">Actualización en tiempo real activa</span>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-300">
-                <thead class="bg-slate-900/60 text-xs uppercase font-medium text-slate-400 border-b border-slate-700">
+<div class="container mt-4">
+    <h2 class="mb-3">Catálogo de Piezas</h2>
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>SKU</th>
+                <th>Nombre</th>
+                <th>Familia</th>
+                <th>Grupo</th>
+                <th>Subgrupo</th>
+                <th>Activo</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Piezas != null && Model.Piezas.Any())
+            {
+                @foreach (var item in Model.Piezas)
+                {
                     <tr>
-                        <th class="px-4 py-3">SKU</th>
-                        <th class="px-4 py-3">Descripción</th>
-                        <th class="px-4 py-3">Categoría</th>
-                        <th class="px-4 py-3 text-center">Físico</th>
-                        <th class="px-4 py-3 text-center">Reservado</th>
-                        <th class="px-4 py-3 text-center">Disponible</th>
-                        <th class="px-4 py-3 text-center">Estado</th>
-                        <th class="px-4 py-3">Reposición</th>
+                        <td>@item.PartId</td>
+                        <td>@item.Sku</td>
+                        <td>@item.Name</td>
+                        <td>@item.Family</td>
+                        <td>@item.PartGroup</td>
+                        <td>@item.Subgroup</td>
+                        <td>@(item.Active ? "Sí" : "No")</td>
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-700/60">
-                    @foreach (var item in Model.Piezas)
-                    {
-                        var estadoColor = item.Disponible <= 0 ? "bg-rose-500/20 text-rose-400 border-rose-500/30" :
-                                          item.Disponible <= item.StockMinimo ? "bg-amber-500/20 text-amber-300 border-amber-500/30" :
-                                          "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-
-                        var estadoTexto = item.Disponible <= 0 ? "Paro / Crítico" :
-                                          item.Disponible <= item.StockMinimo ? "Riesgo / Bajo" :
-                                          "Óptimo";
-
-                        <tr class="hover:bg-slate-800/50 transition-colors">
-                            <td class="px-4 py-3 font-mono text-xs font-semibold text-sky-400">@item.Sku</td>
-                            <td class="px-4 py-3 font-medium text-white">@item.Nombre</td>
-                            <td class="px-4 py-3 text-slate-400">@item.Categoria</td>
-                            <td class="px-4 py-3 text-center font-semibold">@item.StockFisico</td>
-                            <td class="px-4 py-3 text-center text-amber-400 font-semibold">@item.Reservado</td>
-                            <td class="px-4 py-3 text-center font-bold @(item.Disponible <= 0 ? "text-rose-400" : "text-white")">
-                                @item.Disponible
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <span class="px-2 py-0.5 text-xs font-medium rounded-full border @estadoColor">
-                                    @estadoTexto
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-slate-400 text-xs">@item.TiempoReposicion</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center">No hay piezas registradas aún.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
-
-<!-- Script de SignalR para escuchar eventos en vivo -->
-@section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script>
-        const badge = document.getElementById("connectionBadge");
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/inventarioHub")
-            .withAutomaticReconnect()
-            .build();
-
-        connection.on("RecibirActualizacion", function (mensaje) {
-            console.log("Notificación en vivo:", mensaje);
-            // Recargar datos o actualizar fila dinámicamente
-            location.reload(); 
-        });
-
-        connection.start()
-            .then(function () {
-                badge.innerText = "🟢 SignalR Conectado";
-                badge.className = "px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-            })
-            .catch(function (err) {
-                console.error(err.toString());
-                badge.innerText = "🔴 SignalR Desconectado";
-                badge.className = "px-3 py-1 text-xs font-semibold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30";
-            });
-    </script>
-}
