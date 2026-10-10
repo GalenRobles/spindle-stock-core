@@ -78,7 +78,7 @@
     <div class="bg-slate-800/40 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
         <div class="p-4 border-b border-slate-700/80 bg-slate-800/80 flex justify-between items-center">
             <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Catálogo de Piezas en Taller</h2>
-            <span class="text-xs text-slate-400">Actualización en tiempo real activa</span>
+            <span class="text-xs text-slate-400">Datos de PostgreSQL · actualización cada 15 s</span>
         </div>
         <!-- Bloque de busqueda-->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border-b border-slate-700">
@@ -152,7 +152,11 @@
                                         ? "Stock bajo"
                                         : "Disponible";
 
-                    <tr class="hover:bg-slate-700/30 transition-colors">
+                        var estadoFiltro = item.Disponible <= 0
+                            ? "critico"
+                            : item.Disponible <= item.StockMinimo ? "bajo" : "optimo";
+
+                    <tr data-pieza="true" data-id="@item.Id" data-estado="@estadoFiltro" class="hover:bg-slate-700/30 transition-colors">
                         <td class="px-4 py-3 font-mono text-xs font-semibold text-sky-400">
                             @item.Sku
                         </td>
@@ -166,8 +170,7 @@
                         </td>
 
                         <td class="px-4 py-3 text-slate-400">
-                            <!-- Pendiente: conectar ubicación de la pieza -->
-                            <span aria-label="Ubicación no disponible">—</span>
+                            @(string.IsNullOrWhiteSpace(item.Ubicacion) ? "Sin ubicación" : item.Ubicacion)
                         </td>
 
                         <td class="px-4 py-3 text-center font-semibold">
@@ -207,7 +210,7 @@
             </table>
         </div>
     </div>
-    <!-- Faltantes abiertos: pendiente de conectar con datos reales -->
+    <!-- Faltantes abiertos de PostgreSQL -->
 <section class="overflow-hidden rounded-xl border border-slate-700 bg-slate-800">
     <div class="p-5 border-b border-slate-700">
         <h2 class="text-lg font-semibold text-white">
@@ -219,7 +222,7 @@
         </p>
     </div>
 
-    <div id="tablaFaltantes" hidden class="overflow-x-auto">
+    <div id="tablaFaltantes" class="overflow-x-auto">
         <table class="w-full min-w-[750px] text-left text-sm text-slate-300">
             <caption class="sr-only">
                 Faltantes de refacciones por orden de trabajo
@@ -230,13 +233,22 @@
                     <th scope="col" class="px-5 py-4">Refacción</th>
                     <th scope="col" class="px-5 py-4">Orden de trabajo</th>
                     <th scope="col" class="px-5 py-4 text-right">Cantidad faltante</th>
-                    <th scope="col" class="px-5 py-4">Fecha requerida</th>
+                    <th scope="col" class="px-5 py-4">Fecha de registro (UTC)</th>
                     <th scope="col" class="px-5 py-4">Estado</th>
                 </tr>
             </thead>
 
             <tbody id="filasFaltantes" class="divide-y divide-slate-700">
-                <!-- Insertar faltantes al conectar los datos -->
+                @foreach (var faltante in Model.Faltantes)
+                {
+                    <tr>
+                        <td class="px-5 py-4">@faltante.Nombre</td>
+                        <td class="px-5 py-4">@faltante.Orden</td>
+                        <td class="px-5 py-4 text-right">@(faltante.Cantidad?.ToString() ?? "Por determinar")</td>
+                        <td class="px-5 py-4">@faltante.Creado.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="px-5 py-4">Abierto</td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
@@ -245,10 +257,10 @@
          role="status"
          aria-live="polite"
          class="px-5 py-8 text-center text-sm text-slate-400">
-        Los faltantes se mostrarán al conectar los datos.
+        @(Model.Faltantes.Count == 0 ? "No hay faltantes abiertos registrados." : $"{Model.Faltantes.Count} faltantes abiertos registrados.")
     </div>
 </section>
-<!-- Sugerencias de compra: pendiente de conectar -->
+<!-- Sugerencias activas de PostgreSQL -->
 <section class="overflow-hidden rounded-xl border border-slate-700 bg-slate-800">
     <div class="p-5 border-b border-slate-700">
         <h2 class="text-lg font-semibold text-white">
@@ -260,7 +272,7 @@
         </p>
     </div>
 
-    <div id="tablaCompras" hidden class="overflow-x-auto">
+    <div id="tablaCompras" class="overflow-x-auto">
         <table class="w-full min-w-[850px] text-left text-sm text-slate-300">
             <caption class="sr-only">
                 Sugerencias de compra de refacciones
@@ -272,14 +284,23 @@
                     <th scope="col" class="px-5 py-4 text-right">
                         Cantidad sugerida
                     </th>
-                    <th scope="col" class="px-5 py-4">Motivo</th>
+                    <th scope="col" class="px-5 py-4">Órdenes relacionadas</th>
                     <th scope="col" class="px-5 py-4">Tiempo de reposición</th>
-                    <th scope="col" class="px-5 py-4">Prioridad</th>
+                    <th scope="col" class="px-5 py-4">Estado</th>
                 </tr>
             </thead>
 
             <tbody id="filasCompras" class="divide-y divide-slate-700">
-                <!-- Insertar sugerencias reales al conectar los datos -->
+                @foreach (var compra in Model.Compras)
+                {
+                    <tr>
+                        <td class="px-5 py-4">@compra.Nombre</td>
+                        <td class="px-5 py-4 text-right">@compra.Cantidad</td>
+                        <td class="px-5 py-4">@(string.IsNullOrWhiteSpace(compra.Ordenes) ? "Sin orden relacionada" : compra.Ordenes)</td>
+                        <td class="px-5 py-4">@compra.Reposicion</td>
+                        <td class="px-5 py-4">Activa</td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
@@ -288,36 +309,58 @@
          role="status"
          aria-live="polite"
          class="px-5 py-8 text-center text-sm text-slate-400">
-        Las sugerencias de compra se mostrarán al conectar los datos.
+        @(Model.Compras.Count == 0 ? "No hay sugerencias activas registradas." : $"{Model.Compras.Count} sugerencias activas registradas.")
     </div>
 </section>
 </div>
 
-<!-- Script de SignalR para escuchar eventos en vivo -->
+<!-- Actualización independiente de las notificaciones del backend -->
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script>
+        const search = document.getElementById("buscarPieza");
+        const state = document.getElementById("filtrarEstado");
         const badge = document.getElementById("connectionBadge");
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/inventarioHub")
-            .withAutomaticReconnect()
-            .build();
-
-        connection.on("RecibirActualizacion", function (mensaje) {
-            console.log("Notificación en vivo:", mensaje);
-            // Recargar datos o actualizar fila dinámicamente
-            location.reload(); 
-        });
-
-        connection.start()
-            .then(function () {
-                badge.innerText = "🟢 SignalR Conectado";
-                badge.className = "px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-            })
-            .catch(function (err) {
-                console.error(err.toString());
-                badge.innerText = "🔴 SignalR Desconectado";
-                badge.className = "px-3 py-1 text-xs font-semibold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30";
+        badge.textContent = "Actualización cada 15 s";
+        const normalize = value => value.normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const saved = sessionStorage.getItem("inventario-filtros");
+        if (saved) {
+            try {
+                const filters = JSON.parse(saved);
+                search.value = filters.search || "";
+                state.value = filters.state || "";
+            } catch (_) { }
+        }
+        function filterRows() {
+            const query = normalize(search.value.trim());
+            let shown = 0;
+            document.querySelectorAll("tr[data-pieza]").forEach(row => {
+                const matches = normalize(row.textContent).includes(query) &&
+                    (!state.value || row.dataset.estado === state.value);
+                row.hidden = !matches;
+                if (matches) shown++;
             });
+            document.getElementById("resultadoFiltros").textContent =
+                `${shown} refacciones coinciden con los filtros.`;
+            sessionStorage.setItem("inventario-filtros", JSON.stringify({
+                search: search.value, state: state.value
+            }));
+        }
+        search.addEventListener("input", filterRows);
+        state.addEventListener("change", filterRows);
+        const summary = document.createElement("p");
+        summary.id = "resultadoFiltros";
+        summary.className = "px-4 py-2 text-sm text-slate-400";
+        summary.setAttribute("role", "status");
+        search.closest(".grid").after(summary);
+        filterRows();
+        const scroll = sessionStorage.getItem("inventario-scroll");
+        if (scroll) window.scrollTo(0, Number(scroll));
+        setInterval(() => {
+            if (document.hidden || document.activeElement === search ||
+                document.activeElement === state) return;
+            sessionStorage.setItem("inventario-scroll", String(window.scrollY));
+            location.reload();
+        }, 15000);
     </script>
 }

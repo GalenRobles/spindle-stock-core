@@ -23,7 +23,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./TallerBase.sql:/docker-entrypoint-initdb.d/TallerBase.sql:ro
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d almacen_inteligente"]
       interval: 5s
