@@ -16,15 +16,29 @@
     <div class="container">
     <!-- Botón para abrir el menú -->
 <div class="px-4 py-3 border-b border-slate-700">
-    <button id="abrirMenu"
-            type="button"
-            aria-controls="menuLateral"
-            aria-expanded="false"
-            class="rounded-lg border border-slate-600 bg-slate-800
-                   px-4 py-2 font-semibold text-white
-                   hover:bg-slate-700 transition-colors">
-        ☰ Menú
-    </button>
+<button id="abrirMenu"
+        type="button"
+        aria-controls="menuLateral"
+        aria-expanded="false"
+        class="inline-flex items-center justify-center gap-2
+               rounded-lg border border-slate-600 bg-slate-800
+               px-4 py-3 font-semibold leading-none text-white
+               hover:bg-slate-700 transition-colors">
+
+    <svg xmlns="http://www.w3.org/2000/svg"
+         width="20" height="20"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         aria-hidden="true"
+         class="shrink-0">
+        <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+
+    <span>Menú</span>
+</button>
 </div>
 
 <!-- Menú lateral -->
@@ -46,23 +60,41 @@
         </button>
     </div>
 
-    <nav aria-label="Navegación principal" class="space-y-2 p-4">
-        <a asp-page="/Index" class="enlace-menu">
-            Almacén
-        </a>
+ <nav aria-label="Navegación principal"
+     class="flex flex-col gap-2 p-4">
 
-        <a asp-page="/OrdenTrabajo" class="enlace-menu">
-            Órdenes de trabajo
-        </a>
+    <a asp-page="/Index"
+       class="block rounded-xl border border-slate-700
+              bg-slate-800 px-4 py-4 text-base font-semibold
+              text-slate-200 no-underline hover:bg-slate-700
+              hover:text-white transition-colors">
+        Almacén
+    </a>
 
-        <a asp-page="/Piso" class="enlace-menu">
-            Piso móvil
-        </a>
+    <a asp-page="/OrdenTrabajo"
+       class="block rounded-xl border border-slate-700
+              bg-slate-800 px-4 py-4 text-base font-semibold
+              text-slate-200 no-underline hover:bg-slate-700
+              hover:text-white transition-colors">
+        Órdenes de trabajo
+    </a>
 
-        <a asp-page="/Kardex" class="enlace-menu">
-            Kardex
-        </a>
-    </nav>
+    <a asp-page="/Piso"
+       class="block rounded-xl border border-slate-700
+              bg-slate-800 px-4 py-4 text-base font-semibold
+              text-slate-200 no-underline hover:bg-slate-700
+              hover:text-white transition-colors">
+        Piso móvil
+    </a>
+
+    <a asp-page="/Kardex"
+       class="block rounded-xl border border-slate-700
+              bg-slate-800 px-4 py-4 text-base font-semibold
+              text-slate-200 no-underline hover:bg-slate-700
+              hover:text-white transition-colors">
+        Kardex
+    </a>
+</nav>
 </dialog>
         <main role="main" class="pb-3">
             @RenderBody()
